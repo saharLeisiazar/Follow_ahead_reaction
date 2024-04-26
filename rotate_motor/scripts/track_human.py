@@ -25,7 +25,9 @@ class human_traj_prediction():
         print('hello')
 
         self.deg_to_res = 1024/90
-        self.goal = 60
+        # why do we start from 60? 
+        self.goal = 0
+        # self.goal = 60
         self.count = -1
         self.last_detection_direction = 'none'
 
@@ -33,9 +35,6 @@ class human_traj_prediction():
         # lets say the human is on the very edge, that is at 110 degree
         # the camera has to rotate 55 degrees to brings human to centre. Thus, max degree
         self.max_rotation_angle = 55 
-
-        # self.p_x_filt =[]
-        # self.p_y_filt =[]
 
 
     def send_goal(self):
@@ -86,7 +85,7 @@ class human_traj_prediction():
             # detection at edges is not correct so we will try to make smaller turns but 5 turns to cover entire 360
             # avg turn to cover 360 degree and cover most visuals in center pixels (62 degree ?? )
             print("Looking for the human")
-            if(self.last_detection_direction == 'left' )
+            if self.last_detection_direction == 'left':
                 self.goal -= 62
             else 
                 self.goal += 62
