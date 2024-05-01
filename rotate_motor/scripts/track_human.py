@@ -70,7 +70,7 @@ class human_traj_prediction():
         return feat
 
     def predictions_callback(self,data):
-        
+        self.count += 1
         # Frequency calculation using ros time
         global last_callback_time
         current_time = rospy.Time.now()
@@ -80,7 +80,9 @@ class human_traj_prediction():
         
             # Calculate the callback rate (Hz)
             callback_rate = 1 / time_elapsed
-    
+        else:
+            callback_rate = 99
+
         # Update the timestamp of the last callback invocation
         last_callback_time = current_time
 
