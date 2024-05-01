@@ -11,8 +11,8 @@ from camera_dimensions import get_camera_dimensions
 # Get camera dimensions
 width, height = get_camera_dimensions()
 
-# Use camera dimensions
-# print("Camera dimensions: {}x{}".format(width, height))
+# Define a global variable to store the timestamp of the last callback invocation
+last_callback_time = None
 
 class human_traj_prediction():
     def __init__(self):
@@ -70,18 +70,30 @@ class human_traj_prediction():
         return feat
 
     def predictions_callback(self,data):
-        self.count += 1
+        
+        # Frequency calculation using ros time
+        global last_callback_time
+        current_time = rospy.Time.now()
+
+        if last_callback_time is not None:
+            time_elapsed = (current_time - last_callback_time).to_sec()
+        
+            # Calculate the callback rate (Hz)
+            callback_rate = 1 / time_elapsed
+    
+        # Update the timestamp of the last callback invocation
+        last_callback_time = current_time
+
 
         # slow down using exhaustive wait ( do we really need it )
         feat = self.human_data(data)
+
         if(feat != {}):
             self.p_x_bounds.append((feat['bb_x_min'],feat['bb_x_max']))
             self.last_detection_direction = 'left' if feat['x'] < width/2 else 'right'
 
         #######  person is not detected
         else:
-            self.p_x_bounds.append((0,0))
-
             # detection at edges is not correct so we will try to make smaller turns but 5 turns to cover entire 360
             # avg turn to cover 360 degree and cover most visuals in center pixels (62 degree ?? )
             print("Looking for the human")
@@ -91,14 +103,20 @@ class human_traj_prediction():
                 self.goal += 62
             self.send_goal()
 
-        if self.count % 5 == 0:
-
-            median_pair = statistics.median(self.p_x_bounds)
-            median_bb_x_min, median_bb_x_max = median_pair 
+        if self.count % 5 == 0 or callback_rate < 30:
+            
+            ###### person is detected
+            if self.p_x_bounds:
+                if len(self.p_x_bounds) % 2 == 0:  # Even number of pairs
+                    sorted_bounds = sorted(self.p_x_bounds)
+                    median_pair_index = len(sorted_bounds) // 2
+                    median_pair = sorted_bounds[median_pair_index]
+                else:  # Odd number of pairs
+                    median_pair = statistics.median(self.p_x_bounds)
+                
+                median_bb_x_min, median_bb_x_max = median_pair
 
                 
-            ###### person is detected
-            if len(feat):
 
                 ###### To keep the human in the middle of the image
                 mean_bb = (abs(median_bb_x_min) + abs(median_bb_x_max)) /2
