@@ -5,15 +5,21 @@ sys.path.insert(0, '/home/sahar/Follow-ahead-3/MCTS_reaction/scripts')
 from nodes import MCTSNode
 from search import MCTS
 from navi_state import navState
-import numpy as np
-from scipy.spatial.transform import Rotation as R
-import torch
+
 import message_filters
 import rospy
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseArray, PoseStamped
-import time
-from visualization_msgs.msg import Marker
+from std_msgs.msg import Int8
+
+
+# import numpy as np
+# from scipy.spatial.transform import Rotation as R
+# import torch
+# 
+# 
+# from nav_msgs.msg import Odometry
+# from geometry_msgs.msg import PoseArray, PoseStamped
+# import time
+# from visualization_msgs.msg import Marker
 
 print("workssssss")
 # Initial pose of camera with respect to the robot's init pose
@@ -23,11 +29,12 @@ print("workssssss")
 
 class node():
     def __init__(self):
+        rospy.init_node('main', anonymous=True)
         # rospy.Subscriber("/vicon/helmet", Odometry, self.vicon_callback, buff_size=1)
         # rospy.Subscriber("person_pose_pred_all", PoseArray, self.human_pose_callback, buff_size=1)
 
-        helmet_sub = message_filters.Subscriber("/vicon/helmet", Odometry)
-        robot_sub = message_filters.Subscriber("/vicon/robot", Odometry)
+        helmet_sub = message_filters.Subscriber("t1", Int8)
+        robot_sub = message_filters.Subscriber("t2", Int8)
 
         ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
         ts.registerCallback(self.vicon_callback)
@@ -56,12 +63,13 @@ class node():
         
 
     def vicon_callback(self, data):
-        state = [data, data]
+        print("yayyyy")
+        # state = [data, data]
 
-        nav_state = navState(params = self.params, state=state, next_to_move= 0)
-        node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
-        mcts = MCTS(node_human)
-        mcts.tree_expantion()
+        # nav_state = navState(params = self.params, state=state, next_to_move= 0)
+        # node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
+        # mcts = MCTS(node_human)
+        # mcts.tree_expantion()
     
 
 
