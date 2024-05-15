@@ -2,16 +2,17 @@
 
 import sys
 sys.path.insert(0, '/home/sahar/Follow-ahead-3/MCTS_reaction/scripts')
-# from nodes import MCTSNode
-# from search import MCTS
-# from navi_state import navState
+from nodes import MCTSNode
+from search import MCTS
+from navi_state import navState
 
 import message_filters
 import rospy
+from geometry_msgs.msg import TransformStamped
 
 
 # import numpy as np
-# from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as R
 # import torch
 # 
 # 
@@ -32,8 +33,8 @@ class node():
         # rospy.Subscriber("/vicon/helmet", Odometry, self.vicon_callback, buff_size=1)
         # rospy.Subscriber("person_pose_pred_all", PoseArray, self.human_pose_callback, buff_size=1)
 
-        helmet_sub = message_filters.Subscriber("t1", Int8)
-        robot_sub = message_filters.Subscriber("t2", Int8)
+        helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
+        robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
 
         ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
         ts.registerCallback(self.vicon_callback)
@@ -61,14 +62,38 @@ class node():
         # self.goal_ind=0
         
 
-    def vicon_callback(self, data):
-        print("yayyyy")
-        # state = [data, data]
+    def vicon_callback(self, helmet, robot):
 
-        # nav_state = navState(params = self.params, state=state, next_to_move= 0)
-        # node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
-        # mcts = MCTS(node_human)
-        # mcts.tree_expantion()
+        ######## robots pose
+        orien = robot.transform.rotation
+        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
+        robot_z = r.as_euler('zyx', degrees=True)[2]
+        if robot_z > 180:
+            robot_z -=180
+        else:
+            robot_z += 180
+
+        robot_p = robot.transform.translation
+
+        ######### human pose
+        orien = helmet.transform.rotation
+        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
+        human_z = r.as_euler('zyx', degrees=True)[2]
+        
+        if human_z > 0:
+            human_z -=180
+        else:
+            human_z += 180
+
+        human_p = helmet.transform.translation
+
+        ######## define state for MCTS
+        state = [[robot_p.x, robot_p.y, robot_z],[human_p.x, human_p.y, human_z]]
+        # print(state)
+        nav_state = navState(params = self.params, state=state, next_to_move= 0)
+        node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
+        mcts = MCTS(node_human)
+        mcts.tree_expantion()
     
 
 
