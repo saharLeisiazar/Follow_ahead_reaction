@@ -43,8 +43,9 @@ class node():
         self.stay_bool = True
         self.time = time.time()
         self.freq = 2 #(Hz)
+        self.best_action = None
 
-        rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
+        # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
         # rospy.Subscriber("person_pose_pred_all", PoseArray, self.human_pose_callback, buff_size=1)
 
         helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
@@ -55,21 +56,13 @@ class node():
 
         # self.pub_goal = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size =1)
         # self.pub_goal_vis = rospy.Publisher('/goal_vis', Marker, queue_size =1)
-        self.move_robot = rospy.Publisher('/robot_cmd', Twist, queue_size = 1)
-
+        self.move_robot = rospy.Publisher('/robot/robotnik_base_control/cmd_vel', Twist, queue_size = 1)
 
         # file_name = 'RL_model.pt'
         # model_directory = '/path_to_model/' + file_name 
         # model = torch.load(model_directory)
         # self.MCTS_params['model'] = model
-        # self.MCTS_params['use_model'] = True
-        # self.MCTS_params['num_expansion'] = 20
-        # self.MCTS_params['num_rollout'] = 6
-        # self.time = time.time()
-        # 
-        # self.updateGoal = 1
-
-        # self.goal_ind=0
+ 
         
 
     def vicon_callback(self, helmet, robot):
@@ -99,10 +92,36 @@ class node():
 
         ######## define state for MCTS
         state = np.array([[robot_p.x, robot_p.y, robot_z],[human_p.x, human_p.y, human_z]])
+        self.move()
+        
         if time.time() - self.time > (1./self.freq):
             self.time = time.time()
-            self.expand_tree(state)
+            self.best_action = self.expand_tree(state) 
+            print(self.best_action)
 
+        
+
+    def move(self):
+        action = self.best_action
+
+        V = self.params['robot_vel'] 
+        if action == "fast_straight" or action == "fast_right" or action == "fast_left":
+            V *= self.params['robot_vel_fast_lamda']
+
+        W = self.params['robot_angle'] * np.pi / 180 / self.params['dt']
+        if action == "straight" or action == "fast_straight":
+            W = 0
+        elif action == "right" or action == "fast_right":
+            W *= -1
+
+        elif action == None:
+            V = 0
+            W = 0
+
+        t = Twist()
+        t.linear.x = V
+        t.angular.z = W
+        self.move_robot.publish(t)
 
 
     def expand_tree(self, state):
@@ -115,37 +134,14 @@ class node():
             mcts = MCTS(node_human)
 
             t1 = time.time()
-            best_action = mcts.tree_expantion().action
-            print(best_action)
-
+            return  mcts.tree_expantion().action
             print("expansion time: ", time.time()-t1)
-            self.move_robot(best_action)
+            
             # print("leaf node: ", leaf_node.state.state)
             # self.generate_goal(leaf_node.state.state)
             # self.time += self.updateGoal
         else:
             print("Waiting ...")
-
-
-    def move_robot(self, action):
-        action = action.data
-        V = self.params['robot_vel'] 
-        if action == "fast_straight" or action == "fast_right" or action == "fast_left":
-            V *= self.params['robot_vel_fast_lamda']
-
-        W = self.params['robot_angle'] * np.pi / 180 / self.params['dt']
-        if action == "straight" or action == "fast_straight":
-            W = 0
-        elif action == "right" or action == "fast_right":
-            W *= -1
-
-        print(V)
-        print(W)
-
-        t = Twist()
-        t.linear.x = V
-        t.angular.z = W
-        self.move_robot.publish(t)
 
 
     def stay(self):

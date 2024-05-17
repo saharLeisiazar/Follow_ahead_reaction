@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="laser2base" args="0.2 0 0   1.57 0 0   /robot_base_footprint /laser"/>
+    <include file="$(find gmapping)/launch/slam_gmapping_pr2.launch"/>    
+
+</launch>
