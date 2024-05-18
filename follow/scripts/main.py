@@ -15,14 +15,14 @@ from scipy.spatial.transform import Rotation as R
 # from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
+from nav_msgs.msg import OccupancyGrid
 # import time
 # from visualization_msgs.msg import Marker
 
-print("workssssss")
 # Initial pose of camera with respect to the robot's init pose
 # camera2map_trans = [5.8, 1.3, 0]
 # camera2map_rot = [0,0, -150*np.pi/180]
-
+print("works")
 
 class node():
     def __init__(self):
@@ -46,7 +46,9 @@ class node():
         self.best_action = None
 
         # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
-        # rospy.Subscriber("person_pose_pred_all", PoseArray, self.human_pose_callback, buff_size=1)
+        # rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
+
+        rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
 
         helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
         robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
@@ -177,7 +179,18 @@ class node():
         return actions
 
 
+    def costmap_callback(self, data):
 
+        self.params['map_origin_x'] = data.info.origin.position.x
+        self.params['map_origin_y'] = data.info.origin.position.y
+        self.params['map_res'] = data.info.resolution
+        self.params['map_data'] = data.data
+        self.params['map_width'] = data.info.width
+
+        x = int(np.rint((2.7 - self.params['map_origin_x']) / self.params['map_res']))
+        y = int(np.rint((3.5 - self.params['map_origin_y']) / self.params['map_res']))
+        cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
+        print(cost)
 
     # def odom_callback(self,data):
     #     robot_p = data.pose.pose.position
@@ -262,6 +275,5 @@ class node():
 
 if __name__ == '__main__':
     node()
-    # rospy.sleep(0.5)
     rospy.spin()
 
