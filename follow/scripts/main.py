@@ -102,7 +102,6 @@ class node():
             print(self.best_action)
 
         
-
     def move(self):
         action = self.best_action
 
@@ -187,8 +186,8 @@ class node():
         self.params['map_data'] = data.data
         self.params['map_width'] = data.info.width
 
-        x = int(np.rint((2.7 - self.params['map_origin_x']) / self.params['map_res']))
-        y = int(np.rint((3.5 - self.params['map_origin_y']) / self.params['map_res']))
+        x = int(np.rint((0. - self.params['map_origin_x']) / self.params['map_res']))
+        y = int(np.rint((0. - self.params['map_origin_y']) / self.params['map_res']))
         cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
         print(cost)
 
