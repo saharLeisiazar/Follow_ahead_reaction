@@ -18,7 +18,7 @@
     python transform_csv.py
     ```
     - Data reading
-        - Load the raw dataset. We only focus on the files called 'vicon_hat_3_hat_3_translation.csv' in each of the folders named by date, as this is the dataset that includes the corresponding position data.
+        - Load the raw dataset (put inside folder `dataset`). We only focus on the files called 'vicon_hat_3_hat_3_translation.csv' in each of the folders named by date, as this is the dataset that includes the corresponding position data.
         - These files contain the following fields: timestamp, x, y, z.
     - Data Interpolation and Resampling
         - The 'Time' column is converted from a UNIX timestamp to a datetime object. 
