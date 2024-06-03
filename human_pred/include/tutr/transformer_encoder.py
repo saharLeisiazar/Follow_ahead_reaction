@@ -27,7 +27,7 @@ class Encoder(nn.Module):
     def forward(self, x, mask=None):
         for layer in self.layers:
             x = layer(x, x, x, mask)
-
+            print("Layer output:", x)
         return x
 
 
@@ -43,8 +43,10 @@ class TransformerBlock(nn.Module):
 
     def forward(self, query, key, value, mask):
         logits = self.attn(query, key, value, mask)
+        print(f'Attention output: {logits}')
         x = self.dropout(self.norm1(logits + query))
         forward = self.feed_forward(x)
+        print(f'Feed forward output: {forward}')
         out = self.dropout(self.norm2(forward + x))
         return out
 
@@ -100,7 +102,8 @@ class MultihHeadAttention(nn.Module):
         query = self.w_query(query).view(batch_size, -1, self.h, self.d_k).transpose(1, 2)
         key = self.w_key(key).view(batch_size, -1, self.h, self.d_k).transpose(1, 2)
         value = self.w_value(value).view(batch_size, -1, self.h, self.d_k).transpose(1, 2)
-
+        print(f'Query shape: {query.shape}, Key shape: {key.shape}, Value shape: {value.shape}')
+        
         x, self.atten = attention(query, key, value, mask, self.dropout)
 
         x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.h * self.d_k)
