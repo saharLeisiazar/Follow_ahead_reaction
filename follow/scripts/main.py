@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+from human_prob_dist import prob_dist, LSTMModel2D
+
 import numpy as np
+import torch
 import time
-import sys
-sys.path.insert(0, '/home/sahar/Follow-ahead-3/MCTS_reaction/scripts')
+
 from nodes import MCTSNode
 from search import MCTS
 from navi_state import navState
@@ -11,18 +13,12 @@ import message_filters
 import rospy
 from geometry_msgs.msg import TransformStamped
 from scipy.spatial.transform import Rotation as R
-# import torch
-# from nav_msgs.msg import Odometry
+
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
 from nav_msgs.msg import OccupancyGrid
 # import time
 # from visualization_msgs.msg import Marker
 
-# Initial pose of camera with respect to the robot's init pose
-# camera2map_trans = [5.8, 1.3, 0]
-# camera2map_rot = [0,0, -150*np.pi/180]
-print("works")
 
 class node():
     def __init__(self):
@@ -44,6 +40,10 @@ class node():
         self.time = time.time()
         self.freq = 2 #(Hz)
         self.best_action = None
+        human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
+        self.human_prob = prob_dist(human_prob_model_dir)
+        self.human_history = []
+        self.human_history_length = 5
 
         # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
         # rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
@@ -53,32 +53,30 @@ class node():
         helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
         robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
 
-        ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
+        ts = message_filters.TimeSynchronizer([helmet_sub], 10)
+        # ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
         ts.registerCallback(self.vicon_callback)
 
         # self.pub_goal = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size =1)
         # self.pub_goal_vis = rospy.Publisher('/goal_vis', Marker, queue_size =1)
         self.move_robot = rospy.Publisher('/robot/robotnik_base_control/cmd_vel', Twist, queue_size = 1)
 
-        # file_name = 'RL_model.pt'
-        # model_directory = '/path_to_model/' + file_name 
-        # model = torch.load(model_directory)
-        # self.MCTS_params['model'] = model
- 
-        
+        file_name = 'a2c_navigation_or0.zip'
+        model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
+        self.params['RL_model'] = torch.load(model_directory)
+               
 
-    def vicon_callback(self, helmet, robot):
-
+    def vicon_callback(self, helmet): #, robot
         ######## robots pose
-        orien = robot.transform.rotation
-        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
-        robot_z = r.as_euler('zyx', degrees=False)[2]
-        if robot_z > 0:
-            robot_z -=np.pi
-        else:
-            robot_z += np.pi
+        # orien = robot.transform.rotation
+        # r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
+        # robot_z = r.as_euler('zyx', degrees=False)[2]
+        # if robot_z > 0:
+        #     robot_z -=np.pi
+        # else:
+        #     robot_z += np.pi
 
-        robot_p = robot.transform.translation
+        # robot_p = robot.transform.translation
 
         ######### human pose
         orien = helmet.transform.rotation
@@ -92,14 +90,22 @@ class node():
 
         human_p = helmet.transform.translation
 
-        ######## define state for MCTS
-        state = np.array([[robot_p.x, robot_p.y, robot_z],[human_p.x, human_p.y, human_z]])
+        ######## Expanding the tree search
+        state = np.array([[0.,0.,0.],[human_p.x, human_p.y, human_z]])
+        # state = np.array([[robot_p.x, robot_p.y, robot_z],[human_p.x, human_p.y, human_z]])
         self.move()
         
         if time.time() - self.time > (1./self.freq):
             self.time = time.time()
-            self.best_action = self.expand_tree(state) 
-            print(self.best_action)
+            self.human_history.append([human_p.x, human_p.y])
+            if len(self.human_history) > self.human_history_length:
+                self.human_history.pop(0)
+                human_prob = self.human_prob.forward(self.human_history)
+
+                temp = time.time()
+                self.best_action = self.expand_tree(state)  #, human_prob
+                print(time.time()-temp)
+                print(self.best_action)
 
         
     def move(self):
