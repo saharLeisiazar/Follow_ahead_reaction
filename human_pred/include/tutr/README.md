@@ -1,18 +1,16 @@
-# Project Overview: 
+# TUTR
 
-## Data Preprocessing and TUTR Model Re-training (May 13-24, Week 1 & 2)
+# Data Preprocessing and TUTR Model Re-training (May 13-24, Week 1 & 2)
 
-### Finished Tasks
-
-#### Literature Review
+## Literature Review
 - Reviewed academic paper related to the TUTR model to understand the foundational concepts and methodologies.
 - Explored the GitHub repositories of TUTR project to understand the implementations.
 
-#### Dataset Preparation
+## Dataset Preparation
 - Downloaded and analyzed the dataset used by the original TUTR model to familiarize with the data structure and requirements.
 - Obtained the SFU_nav_store dataset from a collaborator, Zhitian, which was used to re-train the TUTR model.
 
-#### Data Transformation
+## Data Transformation
 - Utilized `transform_csv.py` to convert the SFU_nav_store dataset into a format compatible with the TUTR model's input requirements.
     ```bash
     python transform_csv.py
@@ -41,15 +39,65 @@
     ```
     `config/sfu.py` file contains configuration settings for model training. 
 
-#### Model Training and Testing
+## Model Training and Testing
 - Executed `train.py` using the newly created .pkl file to train the TUTR model. 
     ```bash
     python train.py --dataset_name sfu --hp_config config/sfu.py --gpu 0
     ```
 - The best performing model weights were saved as `best.pth`, which were later used for testing the model's efficacy.
 
-### Trained Model Testing (in process)
 
-    Implemented the testing function for TUTR in the file `script/test.py`, however the result is not as expected, might require more parameter adjustments to get the correct results. I will be focusing on this task this week.
+## (May 27 - 31, Week 3)
+## Trained Model Testing
+
+- Implemented the testing function for TUTR in the file `script/test.py` to visualize the prediction with probabiity of next step beased on last 8 observed positions. 
+- The trained model is saved in the file `best_sfu_2.pth`.
+- Results are saved to the same output as the vae model in the `fig` folder.
+
+
+# FlowChain
+## (June 3-11, Week 4)
+
+## Literature Review
+- Reviewed academic paper related to the FlowChain-ICVV2023 model to understand the foundational concepts and methodologies.
+- [Fast Inference and Update of Probabilistic Density Estimation on Trajectory Prediction](https://arxiv.org/abs/2308.08824) by Takahiro Maeda and Norimichi Ukita.
+- Explored the GitHub repositories of [FlowChain-ICVV2023](https://github.com/meaten/FlowChain-ICCV2023) project to understand the implementations.
+
+
+## Dataset Preparation
+- Modified the testing dataset for 'eth' - agent2 to be a U-shape trjectory.
+- Process the modified dataset to get new processed_data and used for testing.
+
+```
+python src/data/TP/process_data.py
+```
+
+## Direction Prediction and Visualization
+- created new functions to make predictions about the next step direction (straight, right, left).
+- Added visualization functions to plot a graph regarding the direction predictions.
+- The added functions can be found in TP_visualizer.py
+- Pretrained models can be found [here](https://drive.google.com/drive/folders/1bA0ut-qrgtr8rV5odUEKk25w9I__HjCY?usp=share_link)
+
+- Just download the 'output' folder to the root of this repo, and it's ready to test these models (already downloaded).
+
+
+## Testing
+without visualization
+```
+python src/main.py --config_file config/TP/FlowChain/CIF_separate_cond_v_trajectron/eth.yml --mode test
+```
+
+with visualization
+```
+python src/main.py --config_file config/TP/FlowChain/CIF_separate_cond_v_trajectron/eth.yml --mode test --visualize
+```
+
+## Model Training
+For example of ETH split,
+```
+python src/main.py --config_file config/TP/FlowChain/CIF_separate_cond_v_trajectron/eth.yml --mode train
+```
+
+
 
 
