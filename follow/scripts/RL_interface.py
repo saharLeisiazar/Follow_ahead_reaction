@@ -1,9 +1,7 @@
-import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.env_util import make_vec_env
 from nav_env import Environment
-from torch.distributions import Categorical
 import matplotlib.pyplot as plt
 import matplotlib.markers as mmarkers
 import matplotlib.colors as mcolors
@@ -15,6 +13,46 @@ from stable_baselines3 import A2C
 from stable_baselines3 import DDPG
 
 DEVICE = 'cuda'
+
+
+class RL_model:
+    def __init__(self):
+        return
+
+    def load_model(self, model_path='', policy='a2c', env=Environment()):
+        if policy == 'dqn':
+            self.model = DQN('MlpPolicy', env, verbose=1, buffer_size=10000, learning_rate=1e-3, batch_size=32, gamma=0.99, exploration_fraction=0.1, exploration_final_eps=0.02)
+            self.model.q_net.load_state_dict(torch.load(model_path))
+        elif policy == 'a2c':
+            self.model = A2C.load(model_path)
+        elif policy == 'ddpg':
+            self.model = DDPG.load(model_path)
+        else:
+            raise Exception
+        return self.model    
+
+    def evaluate_state(self, state, action=None, policy='a2c'):
+        assert action is None or policy == 'dqn'
+        assert policy is not None
+        state = state.to(DEVICE)
+        if policy == 'dqn':
+            q_values = self.model.policy.q_net(state).detach()
+            q_values = q_values.flatten()
+            if action is None:
+                return torch.max(q_values)
+            return q_values[action]
+        elif policy == 'a2c':
+            value = self.model.policy.predict_values(state) 
+            return value
+        elif policy == 'ddpg':
+            q_values = self.model.critic(state).detach()
+            q_values = q_values.flatten()
+            if action is None:
+                return torch.max(q_values)
+            return q_values[action]
+        else:
+            raise Exception()
+
 
 def convert_action(env:Environment, action):
     tmp = [0, np.pi/4, np.pi/2, np.pi * 3/4, np.pi, np.pi*5/4, np.pi*3/2, np.pi*7/4]
@@ -57,7 +95,7 @@ def select_action(model, state):
     return torch.argmax(q_values).item()
 
 
-def load_model(model_path='/home/sahar/Follow-ahead-3/DQN_test/a2c_navigation_or0', policy='a2c', env=Environment()):
+def load_model(model_path='', policy='a2c', env=Environment()):
     if policy == 'dqn':
         model = DQN('MlpPolicy', env, verbose=1, buffer_size=10000, learning_rate=1e-3, batch_size=32, gamma=0.99, exploration_fraction=0.1, exploration_final_eps=0.02)
         model.q_net.load_state_dict(torch.load(model_path))

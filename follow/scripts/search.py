@@ -3,14 +3,14 @@ import numpy as np
 import torch
 from treelib import Tree
 import os
-from RL_interface import evaluate_state
 
 
 class MCTS:
-    def __init__(self, node: MCTSNode):
+    def __init__(self, node: MCTSNode, human_prob):
         self.root = node
         self.params = node.params
         self.next_node_candidates = []
+        self.human_prob = human_prob
 
 
     def tree_expantion(self):
@@ -44,7 +44,7 @@ class MCTS:
                 child_node.tree_id = tree_id+1
                 tree_id +=1
             
-            # self.draw_tree()
+            self.draw_tree()
 
         return self.best_child_node()
 
@@ -52,16 +52,16 @@ class MCTS:
     def compute_UCB(self, c):
         c_param= 1.
         prob = 1.
-        # if c.state.next_to_move == 0: 
-        #     if c.action == 'left':
-        #         prob = 0.1
-        #     elif c.action == 'straight':
-        #         prob = 0.8
-        #     elif c.action == 'right':
-        #         prob = 0.1
+        if c.state.next_to_move == 0: 
+            if c.action == 'left':
+                prob = self.human_prob['left']
+            elif c.action == 'straight':
+                prob = self.human_prob['straight']
+            elif c.action == 'right':
+                prob = self.human_prob['right']
 
-        # else:
-        #     prob = 1./ len(self.params['robot_acts'])      
+        else:
+            prob = 1.      
 
         UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))  * prob
 
@@ -87,16 +87,14 @@ class MCTS:
         return
     
     def evaluate_node(self, node):
-        device = 'cpu'
         state = node.state.state
         obs = np.concatenate([
             state[0,:2] - state[1,:2] , [state[1,2]], [state[0,2]]
         ])
-        obs = torch.FloatTensor(obs).unsqueeze(0).to(device=device)
+        obs = torch.FloatTensor(obs).unsqueeze(0)
         policy='a2c'
-        value = evaluate_state(self.params['RL_model'], obs, policy=policy)[0][0]
-        value = value.detach().cpu().numpy()
-        return value
+        value = self.params['RL_model'].evaluate_state(obs, policy=policy)
+        return value.item()
     
     def best_child_node(self):
         visit = []

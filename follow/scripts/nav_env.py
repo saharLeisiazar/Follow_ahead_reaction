@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import random
-import gym
+import gymnasium as gym
 
 def degrees_to_vector(angle_degrees):
     # Convert angle from degrees to radians

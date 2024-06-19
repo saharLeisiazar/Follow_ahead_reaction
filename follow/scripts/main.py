@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from human_prob_dist import prob_dist, LSTMModel2D
+from RL_interface import RL_model
 
 import numpy as np
 import torch
@@ -53,8 +54,8 @@ class node():
         helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
         robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
 
-        ts = message_filters.TimeSynchronizer([helmet_sub], 10)
-        # ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
+        # ts = message_filters.TimeSynchronizer([helmet_sub], 10)
+        ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
         ts.registerCallback(self.vicon_callback)
 
         # self.pub_goal = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size =1)
@@ -63,20 +64,21 @@ class node():
 
         file_name = 'a2c_navigation_or0.zip'
         model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
-        self.params['RL_model'] = torch.load(model_directory)
+        self.params['RL_model'] = RL_model()
+        self.params['RL_model'].load_model(model_directory, policy='a2c')
                
 
-    def vicon_callback(self, helmet): #, robot
+    def vicon_callback(self, helmet, robot): 
         ######## robots pose
-        # orien = robot.transform.rotation
-        # r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
-        # robot_z = r.as_euler('zyx', degrees=False)[2]
-        # if robot_z > 0:
-        #     robot_z -=np.pi
-        # else:
-        #     robot_z += np.pi
+        orien = robot.transform.rotation
+        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
+        robot_z = r.as_euler('zyx', degrees=False)[2]
+        if robot_z > 0:
+            robot_z -=np.pi
+        else:
+            robot_z += np.pi
 
-        # robot_p = robot.transform.translation
+        robot_p = robot.transform.translation
 
         ######### human pose
         orien = helmet.transform.rotation
@@ -103,7 +105,7 @@ class node():
                 human_prob = self.human_prob.forward(self.human_history)
 
                 temp = time.time()
-                self.best_action = self.expand_tree(state)  #, human_prob
+                self.best_action = self.expand_tree(state, human_prob) 
                 print(time.time()-temp)
                 print(self.best_action)
 
@@ -131,22 +133,13 @@ class node():
         self.move_robot.publish(t)
 
 
-    def expand_tree(self, state):
-        # print("current state: ", self.state)
-
+    def expand_tree(self, state, human_prob=None):
         if not self.stay():
-
             nav_state = navState(params = self.params, state=state, next_to_move= 0)
             node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
-            mcts = MCTS(node_human)
-
-            t1 = time.time()
+            mcts = MCTS(node_human, human_prob)
             return  mcts.tree_expantion().action
-            print("expansion time: ", time.time()-t1)
-            
-            # print("leaf node: ", leaf_node.state.state)
-            # self.generate_goal(leaf_node.state.state)
-            # self.time += self.updateGoal
+
         else:
             print("Waiting ...")
 
