@@ -65,8 +65,9 @@ class MCTSNode(object):
             return True
 
     def any_obs(self, s, sp):
-
-        return False
+        if self.params['sim']:
+            return False
+        
         x1_ind = int(np.rint((s[0] - self.params['map_info']['origin_x']) / self.params['map_info']['res']))
         y1_ind = int(np.rint((s[1] - self.params['map_info']['origin_y']) / self.params['map_info']['res']))
         x2_ind = int(np.rint((sp[0] - self.params['map_info']['origin_x']) / self.params['map_info']['res']))

@@ -23,33 +23,29 @@ class MCTS:
                 #### UCB of the children and selecting a child node
                 UCB_children = []
                 for c in curr_node.children:
-                    if c:
-                        UCB = self.compute_UCB(c)
-                        UCB_children.append(UCB)
-                    else:
-                        UCB_children.append(-np.inf)
+                    UCB_children.append(self.compute_UCB(c))
 
                 curr_node = curr_node.children[np.argmax(UCB_children)]  
 
             ### at this point current node is a leaf node
             ### Node expantion
-            
             while not curr_node.is_fully_expanded():
                 child_node = curr_node.expand()
                 if child_node == None:
                     continue
-
                 child_node.value = self.evaluate_node(child_node)
                 child_node.backpropagate()
                 child_node.tree_id = tree_id+1
                 tree_id +=1
             
-            self.draw_tree()
-
+            # self.draw_tree()
         return self.best_child_node()
 
 
     def compute_UCB(self, c):
+        if not c:
+            return -np.inf
+        
         c_param= 1.
         prob = 1.
         if c.state.next_to_move == 0: 
@@ -104,4 +100,5 @@ class MCTS:
             else:
                 visit.append(0)
       
+        print(visit)
         return self.root.children[np.argmax(visit)]        
