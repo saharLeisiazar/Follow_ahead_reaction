@@ -7,6 +7,8 @@ from RL_interface import RL_model
 
 import time
 import numpy as np
+import matplotlib.pyplot as plt
+import os
 
 def main():
     import argparse
@@ -31,7 +33,7 @@ class Tree(object):
         self.params = params 
         self.human_traj = human_traj_generator(self.params['human_vel'], self.params['dt'])
         self.human_prob = prob_dist(self.params['human_prob_model_dir'])
-        self.robot_pose = [0.,0.,0.]
+
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['robot_vel'] = 1.0
@@ -45,31 +47,64 @@ class Tree(object):
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
 
+
     def run(self):
+        self.plot_idx = 0
         for traj in self.human_traj:
+            traj_state = []
+            robot_pose = [0.,0.,0.]
             for i in range(len(traj)- self.params['human_history_len']):
                 # get the human prob destribution
                 history_seq = np.array(traj[i:i+self.params['human_history_len']])
                 human_prob = self.human_prob.forward(history_seq[:, :2])
 
                 # expand the tree
-                state = np.array([self.robot_pose, history_seq[-1]])
+                state = np.array([robot_pose, history_seq[-1]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
                 mcts = MCTS(node_human, human_prob)
-                t = time.time()
                 robot_action = mcts.tree_expantion().action
-                print('time:', time.time()-t)
-                self.move_robot(state, robot_action)
 
+                robot_pose = self.move_robot(state, robot_action)
+                traj_state.append(state)
 
+            self.plot_state(traj_state)
+
+        return
+
+    def plot_state(self, traj_state):
+        traj_state = np.array(traj_state)
+        step=int(270/traj_state.shape[0])
+        fig, axs = plt.subplots(1, figsize = (12,7))
+
+        robot_m_size = 100
+        human_m_size =70
+        for i in range(traj_state.shape[0]):
+            C = plt.get_cmap("jet")(step*i)
+            if i == 0:
+                axs.scatter(traj_state[i,0,0], traj_state[i,0,1], color=C, s=robot_m_size, label='Robot', marker='o') #, linestyle=' '
+                axs.scatter(traj_state[i,1,0], traj_state[i,1,1], color=C, s=human_m_size, label='Human', marker='x')
+            else:
+                axs.scatter(traj_state[i,0,0], traj_state[i,0,1], s=robot_m_size,color=C, marker='o')
+                axs.scatter(traj_state[i,1,0], traj_state[i,1,1], s=human_m_size,color=C, marker='x')
+
+        axs.legend()
+        axs.set_title('Simulation')
+        axs.set_xlabel('X')
+        axs.set_ylabel('Y')
+        axs.axis('equal')
+        
+        if not os.path.exists('follow/sim_results'):
+            os.makedirs('follow/sim_results')
+
+        fig.savefig('follow/sim_results/' + str(self.plot_idx) + '.png')
+        self.plot_idx+=1
         return
 
     def move_robot(self, state, robot_action):
         nav_state = navState(params = self.params, state=state, next_to_move= 0)
         new_state = nav_state.move(robot_action)
-        self.robot_pose = new_state.state[0]
-        return
+        return new_state.state[0]
 
     def define_human_actions(self):             
         actions = {0: "left",

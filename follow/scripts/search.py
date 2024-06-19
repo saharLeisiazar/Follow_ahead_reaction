@@ -100,5 +100,5 @@ class MCTS:
             else:
                 visit.append(0)
       
-        print(visit)
+        # print(visit)
         return self.root.children[np.argmax(visit)]        
