@@ -23,17 +23,19 @@ class LSTMModel2D(nn.Module):
     
 
 ##### Load model
-model_name = 'model.pth'
+path = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/'
+dir = path+ 'desired_freq:5_tanh_power_value:0.2_seq_length:15_input_length:14_batch_size:64_hidden_size:64_num_epochs:10000_learning_rate:0.01_scheduler_step:5000'
+model_name = dir + '/model.pth'
 model = torch.load(model_name).cuda()
 model.eval()
 
 
 # Load trajectories and predict next point
-seq_length = 6 
-input_length = 5
+seq_length = 15 
+input_length = 14
 
 # threshold = 50 * np.pi/180
-directory = '../include/trajectories'
+directory = path+'trajectories_5hz'
 for filename in os.listdir(directory):
     if filename.endswith(".csv"):
         print(filename)
@@ -41,10 +43,10 @@ for filename in os.listdir(directory):
         data = np.genfromtxt(file_path, delimiter=',')
 
         for i in range(len(data) - seq_length):
-            if i==20:
-                print()
-            seq = data[i:i+seq_length]
+            seq = np.array(data[i:i+seq_length])
+            seq += np.random.uniform(-0.05, 0.05, seq.shape)
             seq = torch.from_numpy(seq).float()
+
             x = seq - seq[input_length-1]
             x = x[:input_length].cuda()
 
@@ -84,87 +86,12 @@ for filename in os.listdir(directory):
             # plt.axis('equal')
             # plt.legend()
             folder = filename[:-4]
-            if not os.path.exists('../include/' + folder):
-                os.makedirs('../include/' + folder)
+            if not os.path.exists(dir + '/include/' + folder):
+                os.makedirs(dir+ '/include/' + folder)
 
-            fig.savefig( '../include/' + folder + '/' + str(i) + '.png')
+            fig.savefig( dir+ '/include/' + folder + '/' + str(i) + '.png')
             plt.close()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            # fig = plt.figure()
-            # x = np.squeeze(x, axis=0)
-            # mu = np.squeeze(mu, axis=0)
-            # pi = np.squeeze(pi, axis=0)
-
-
-            # #### human's current orientation
-            # p1 = x[-1, :2]
-            # p2 = x[-2, :2]
-            # theta = np.arctan2(p1[1]-p2[1], p1[0]-p2[0])
-
-            # dp = mu - p1
-            # beta = np.arctan2(dp[:,1], dp[:,0])
-            # alpha = beta - theta
-
-            # left = 0.
-            # right = 0.
-            # straight = 0.
-            # for a, p in zip(alpha, pi):
-            #     if a > threshold:
-            #         left+=p
-            #     elif a < -threshold:
-            #         right+=p
-            #     else:
-            #         straight+=p
-
-
-            # plt.plot(x[:, 0], x[:, 1], 'bo', label='X_test')
-            # plt.plot(y[0], y[1], 'go', label='GT')
-            
-            # dist_to_goal = 0.5
-            # left = round(left, 2)
-            # right = round(right, 2)
-            # straight = round(straight, 2)
-
-            # x_goal = dist_to_goal*np.cos(theta+ (0.5)) + p1[0]
-            # y_goal = dist_to_goal*np.sin(theta+ (0.5)) + p1[1]
-            # plt.scatter(x_goal, y_goal, marker='*', color='red', s=300)
-            # plt.text(x_goal, y_goal, str(left),  ha='center')
-
-            # x_goal = dist_to_goal*np.cos(theta- (0.5)) + p1[0]
-            # y_goal = dist_to_goal*np.sin(theta- (0.5)) + p1[1]
-            # plt.scatter(x_goal, y_goal, marker='*', color='red', s=300)
-            # plt.text(x_goal, y_goal, str(right),  ha='center')
-
-            # x_goal = dist_to_goal*np.cos(theta) + p1[0]
-            # y_goal = dist_to_goal*np.sin(theta) + p1[1]
-            # plt.scatter(x_goal, y_goal, marker='*', color='red', s=300)
-            # plt.text(x_goal, y_goal, str(straight),  ha='center')
-
-            # plt.legend()
-            # plt.xlabel('X')
-            # plt.ylabel('Y')
-            # plt.title('Test Data and Predicted Values')
-            # plt.axis('equal')
-            # # plt.xlim(-0.5, 7)
-
-            # folder = filename[:-4]
-            # fig.savefig( '../include/' + folder + '/' + str(i) + '.png')
 

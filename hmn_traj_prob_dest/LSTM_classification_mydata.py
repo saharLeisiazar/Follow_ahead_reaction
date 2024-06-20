@@ -11,13 +11,13 @@ input_size = 2  # 2D points
 hidden_size = 64
 output_size = 3  # left, straight, right
 num_layers = 1
-num_epochs = 100000
+num_epochs = 10000
 
 learning_rate = 0.01
 seq_length = 15 
 input_length = 14
 batch_size = 64
-scheduler_step = 100000
+scheduler_step = 5000
 
 current_freq = 50
 desired_freq = 5
@@ -48,19 +48,20 @@ def generate_target(seq, input_length):
 
 def generate_2d_data(seq_length, input_length):
     # data loaidng and preperation
-    raw_data = np.load('/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/data_3d_h36m.npz', allow_pickle=True)['positions_3d'].item()
     samples = []
     target = []
 
-    for dataset in ["S1", "S5", "S6", "S8", "S9", "S11"]:
-        data = raw_data[dataset]['Walking'] #S 1/5/6/8/9/11
-        data = data[:,0,:2]  #hip pose
-        for j in range(freq_ratio):
-            ind = np.arange(j, data.shape[0], freq_ratio)  # reducing the sampling rate from 50 hz to 2 hz
-            d = data[ind]
+    path = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/'
+    directory = path+'trajectories_5hz'
+    for filename in os.listdir(directory):
+        if filename.endswith(".csv"):
+            print(filename)
+            file_path = os.path.join(directory, filename)
+            data = np.genfromtxt(file_path, delimiter=',')
 
-            for i in range(d.shape[0] - seq_length):
-                new_seq = d[i:i+seq_length]
+            for i in range(len(data) - seq_length):
+                new_seq = np.array(data[i:i+seq_length])
+
                 new_sample = new_seq
                 samples.append(new_sample[:input_length])
                 target.append(generate_target(new_sample, input_length))

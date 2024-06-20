@@ -1,9 +1,13 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
+dt = 1./ 5
+vel = 1.
+dist = vel * dt
 
-dist = 0.5
+dir = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/trajectories_5hz/'
 #########################
 # S shape
 traj = [[0,0,0.]]
@@ -22,7 +26,7 @@ for i in range(1,50):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/s.csv", traj,  
+np.savetxt(dir + "s.csv", traj,  
               delimiter = ",")
 
 
@@ -39,8 +43,11 @@ for i in range(1, 15):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/right.csv", traj,  
+np.savetxt(dir + "right.csv", traj,  
               delimiter = ",")
+
+
+
 ################
 # left turn
 turn = 7 * np.pi/180
@@ -53,19 +60,19 @@ for i in range(1, 15):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/left.csv", traj,  
+np.savetxt(dir +"left.csv", traj,  
               delimiter = ",")
 
 #####################
 # straight trajectory
 traj = [[0,0,0.]]
-for i in range(1, 10):
+for i in range(1, 20):
     x = traj[i-1][0] + dist 
     traj.append([x,0.,0.])
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/straight.csv", traj,  
+np.savetxt(dir +"straight.csv", traj,  
               delimiter = ",")
 
 ################
@@ -84,7 +91,7 @@ for i in range(1,30):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/left_U.csv", traj,  
+np.savetxt(dir +"left_U.csv", traj,  
               delimiter = ",")
 
 ################
@@ -103,7 +110,7 @@ for i in range(1,30):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/right_U.csv", traj,  
+np.savetxt(dir +"right_U.csv", traj,  
               delimiter = ",")
 
 
@@ -121,8 +128,9 @@ for i in range(1, 15):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/right_15.csv", traj,  
+np.savetxt(dir +"right_15.csv", traj,  
               delimiter = ",")
+
 ################
 # sharp left turn
 turn = 15 * np.pi/180
@@ -135,5 +143,5 @@ for i in range(1, 15):
 
 traj = np.array(traj)
 traj = traj[:, :2]
-np.savetxt("../include/trajectories/left_15.csv", traj,  
+np.savetxt(dir +"left_15.csv", traj,  
               delimiter = ",")
