@@ -4,6 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+
+noise = 0.001
+
 class LSTMModel2D(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers):
         super(LSTMModel2D, self).__init__()
@@ -24,7 +27,7 @@ class LSTMModel2D(nn.Module):
 
 ##### Load model
 path = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/'
-dir = path+ 'desired_freq:5_tanh_power_value:0.2_seq_length:15_input_length:14_batch_size:64_hidden_size:64_num_epochs:10000_learning_rate:0.01_scheduler_step:5000'
+dir = path+ 'desired_freq:5_tanh_power_value:0.2_seq_length:15_input_length:14_batch_size:64_hidden_size:64_num_epochs:10005_learning_rate:0.01_scheduler_step:5000'
 model_name = dir + '/model.pth'
 model = torch.load(model_name).cuda()
 model.eval()
@@ -44,7 +47,7 @@ for filename in os.listdir(directory):
 
         for i in range(len(data) - seq_length):
             seq = np.array(data[i:i+seq_length])
-            seq += np.random.uniform(-0.05, 0.05, seq.shape)
+            seq += np.random.uniform(-noise, noise, seq.shape)
             seq = torch.from_numpy(seq).float()
 
             x = seq - seq[input_length-1]

@@ -11,7 +11,7 @@ input_size = 2  # 2D points
 hidden_size = 64
 output_size = 3  # left, straight, right
 num_layers = 1
-num_epochs = 10000
+num_epochs = 10005
 
 learning_rate = 0.01
 seq_length = 15 
@@ -24,6 +24,7 @@ desired_freq = 5
 freq_ratio = current_freq // desired_freq
 
 tanh_power_value = 0.2
+noise = 0.001
 
 exp_name = 'desired_freq:' + str(desired_freq) + '_tanh_power_value:'+ str(tanh_power_value)+ '_seq_length:'+str(seq_length) + '_input_length:'+str(input_length) + '_batch_size:'+str(batch_size) + '_hidden_size:'+str(hidden_size) + '_num_epochs:'+str(num_epochs) + '_learning_rate:'+str(learning_rate)+ '_scheduler_step:'+str(scheduler_step)
 
@@ -59,31 +60,45 @@ def generate_2d_data(seq_length, input_length):
             file_path = os.path.join(directory, filename)
             data = np.genfromtxt(file_path, delimiter=',')
 
-            for i in range(len(data) - seq_length):
-                new_seq = np.array(data[i:i+seq_length])
+            shift_x, shift_y =np.mgrid[-2:2.1:0.5, -2:2.1:0.5]
+            xy = np.vstack((shift_x.flatten(), shift_y.flatten())).T
 
-                new_sample = new_seq
-                samples.append(new_sample[:input_length])
-                target.append(generate_target(new_sample, input_length))
+            for shift in xy:
+                for i in range(len(data) - seq_length):
+                    new_seq = np.array(data[i:i+seq_length])
 
-                new_sample = np.flip(new_seq, axis=0)
-                samples.append(new_sample[:input_length])
-                target.append(generate_target(new_sample, input_length))
-
-                for m in [[-1,1], [1,-1], [-1,-1]]:
-                    new_sample = new_seq * m
+                    new_sample = new_seq
+                    new_sample += shift
+                    new_sample += np.random.uniform(-noise, noise, new_sample.shape)
                     samples.append(new_sample[:input_length])
                     target.append(generate_target(new_sample, input_length))
 
-                for theta in np.arange(-np.pi, np.pi, np.pi/10):
-                    rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-                    new_sample = np.dot(new_seq, rot)
+                    new_sample = np.flip(new_seq, axis=0)
+                    new_sample += shift
+                    new_sample += np.random.uniform(-noise, noise, new_sample.shape)
                     samples.append(new_sample[:input_length])
                     target.append(generate_target(new_sample, input_length))
 
-                    new_sample = np.dot(np.flip(new_seq, axis=0), rot)
-                    samples.append(new_sample[:input_length])
-                    target.append(generate_target(new_sample, input_length))
+                    for m in [[-1,1], [1,-1], [-1,-1]]:
+                        new_sample = new_seq * m
+                        new_sample += shift
+                        new_sample += np.random.uniform(-noise, noise, new_sample.shape)
+                        samples.append(new_sample[:input_length])
+                        target.append(generate_target(new_sample, input_length))
+
+                    for theta in np.arange(-np.pi, np.pi, np.pi/10):
+                        rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+                        new_sample = np.dot(new_seq, rot)
+                        new_sample += shift
+                        new_sample += np.random.uniform(-noise, noise, new_sample.shape)
+                        samples.append(new_sample[:input_length])
+                        target.append(generate_target(new_sample, input_length))
+
+                        new_sample = np.dot(np.flip(new_seq, axis=0), rot)
+                        new_sample += shift
+                        new_sample += np.random.uniform(-noise, noise, new_sample.shape)
+                        samples.append(new_sample[:input_length])
+                        target.append(generate_target(new_sample, input_length))
 
         
     samples = np.array(samples)

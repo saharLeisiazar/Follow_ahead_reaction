@@ -14,10 +14,11 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--sim', type=bool, default= True)
-    parser.add_argument('--num_expansion', type=int, default= 60)
+    parser.add_argument('--expansion_time', type=int, default= 0.15)
+    parser.add_argument('--gamma', type=float, default= 0.90)
     parser.add_argument('--human_vel', type=int, default= 1.)
-    parser.add_argument('--dt', type=int, default= 0.5)
-    parser.add_argument('--human_history_len', type=int, default= 5)
+    parser.add_argument('--dt', type=int, default= 0.2)
+    parser.add_argument('--human_history_len', type=int, default= 15)
     parser.add_argument('--human_prob_model_dir', type=str, default= "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth")
     args = parser.parse_args()
     params = vars(args)
@@ -52,18 +53,21 @@ class Tree(object):
         self.plot_idx = 0
         for traj in self.human_traj:
             traj_state = []
-            robot_pose = [0.,0.,0.]
+            robot_pose = np.array(traj[self.params['human_history_len']-1]) + [1.5,0.,0.]
             for i in range(len(traj)- self.params['human_history_len']):
                 # get the human prob destribution
                 history_seq = np.array(traj[i:i+self.params['human_history_len']])
                 human_prob = self.human_prob.forward(history_seq[:, :2])
+                # human_prob = {'left': 1., 'straight': 1., 'right': 1.}
 
                 # expand the tree
+                if i==11:
+                    print('here')
                 state = np.array([robot_pose, history_seq[-1]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
                 mcts = MCTS(node_human, human_prob)
-                robot_action = mcts.tree_expantion().action
+                robot_action = mcts.tree_expantion(time.time() + self.params['expansion_time']).action
 
                 robot_pose = self.move_robot(state, robot_action)
                 traj_state.append(state)
@@ -94,10 +98,11 @@ class Tree(object):
         axs.set_ylabel('Y')
         axs.axis('equal')
         
-        if not os.path.exists('follow/sim_results'):
-            os.makedirs('follow/sim_results')
+        path = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/sim_results'
+        if not os.path.exists(path):
+            os.makedirs(path)
 
-        fig.savefig('follow/sim_results/' + str(self.plot_idx) + '.png')
+        fig.savefig(path + '/' + str(self.plot_idx) + '.png')
         self.plot_idx+=1
         return
 

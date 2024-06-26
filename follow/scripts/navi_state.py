@@ -43,26 +43,61 @@ class navState(object):
 
         return new_s
     
+    def assign_values(self, vector, ref_orientation_radians):
+        angle = np.arctan2(vector[1], vector[0])
+        if angle < 0:
+            angle = 2* np.pi + angle
+
+        diff = np.abs(ref_orientation_radians - angle)
+
+        return diff
          
     def calculate_reward(self, new_s):
-        #### this founction is just for evaluation
-        D2 = np.linalg.norm(new_s[0,:2]- new_s[1, :2])
-        beta2 = np.arctan2(new_s[0,1] - new_s[1,1] , new_s[0,0] - new_s[1,0])   # atan2 (yr - yh  , xr - xh)           
-        alpha2 = np.absolute(new_s[1,2] - beta2) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
+        vector = new_s[0, :2] - new_s[1, :2]
 
-        ######## angle reward
-        thresh = 60 # degrees
-        ra = (-2/thresh * alpha2) +1
+        #angular_threshold_degrees = 2 * np.pi #np.pi / 4
+        distance = np.linalg.norm(vector + 1e-8)
+        diff = self.assign_values(vector, new_s[1,2]) * 180 / np.pi
 
-        ######### distance reward
-        rd = 0
-        if D2 <1.5:          
-            rd = 2*(D2-1.5)
-        elif D2 > 1.5 and D2 <2.5:
-            rd = 0
-        elif D2 >2.5: #and D2 < 4
-            rd = 2.5 - D2
-        # else:
-        #     rd = -1
+        r_d = 0
+        if distance > 5 or distance <0.25:
+            r_d = -1
+        elif distance >0.25 and distance <1:
+            r_d = -(1-distance)
+        elif distance > 1 and distance <2:
+            r_d = 0.5 * (0.5 - np.abs(distance-1.5))
+        elif distance > 2 and distance <5:
+            r_d = -0.25 * (distance-1)
+        else:
+            pass
 
-        return ra + rd  #min(max( ra + rd , -1) , 1)  
+        if diff < 25:
+            r_o = 0.5 * ((25 - diff)/25)
+        else:
+            r_o = -0.25 * diff / 180
+
+        print(distance, r_d, diff, r_o)
+        return min(max(r_o + r_d, -1), 1)
+    
+
+        # #### this founction is just for evaluation
+        # D2 = np.linalg.norm(new_s[0,:2]- new_s[1, :2])
+        # beta2 = np.arctan2(new_s[0,1] - new_s[1,1] , new_s[0,0] - new_s[1,0])   # atan2 (yr - yh  , xr - xh)           
+        # alpha2 = np.absolute(new_s[1,2] - beta2) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
+
+        # ######## angle reward
+        # thresh = 60 # degrees
+        # ra = (-2/thresh * alpha2) +1
+
+        # ######### distance reward
+        # rd = 0
+        # if D2 <1.5:          
+        #     rd = 2*(D2-1.5)
+        # elif D2 > 1.5 and D2 <2.5:
+        #     rd = 0
+        # elif D2 >2.5: #and D2 < 4
+        #     rd = 2.5 - D2
+        # # else:
+        # #     rd = -1
+
+        # return ra + rd  #min(max( ra + rd , -1) , 1)  

@@ -2,14 +2,14 @@ import numpy as np
 
 def human_traj_generator(human_vel, dt):
     traj_list = []
-    init= [-3.,0.,0.]
+    init= [0.,0.,0.]
     dist = human_vel* dt
 
     ################
     # U shape
     traj = [init]
-    for i in range(1,30):
-        if i <5 or i>25:
+    for i in range(1,45):
+        if i <20 or i>40:
             turn = 0
         else:
             turn = 8.5 * np.pi/180
@@ -24,8 +24,8 @@ def human_traj_generator(human_vel, dt):
     ################
     # U shape
     traj = [init]
-    for i in range(1,30):
-        if i <5 or i>25:
+    for i in range(1,45):
+        if i <20 or i>40:
             turn = 0
         else:
             turn = -8.5 * np.pi/180
@@ -78,7 +78,7 @@ def human_traj_generator(human_vel, dt):
     # right turn
     turn = -4 * np.pi/180
     traj = [init]
-    for i in range(1, 15):
+    for i in range(1, 30):
         x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
         y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
         theta = turn + traj[i-1][2]
@@ -90,7 +90,7 @@ def human_traj_generator(human_vel, dt):
     # left turn
     turn = 4 * np.pi/180
     traj = [init]
-    for i in range(1, 15):
+    for i in range(1, 30):
         x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
         y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
         theta = turn + traj[i-1][2]
@@ -102,7 +102,7 @@ def human_traj_generator(human_vel, dt):
     ################
     #straight trajectory
     traj = [init]
-    for i in range(1, 10):
+    for i in range(1, 25):
         x = traj[i-1][0] + dist 
         traj.append([x,0.,0.])
 

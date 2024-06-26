@@ -92,11 +92,13 @@ class MCTSNode(object):
     def backpropagate(self):
         value = self.value
         parent= self.parent
+        pow = 1
               
         while parent:
             parent.number_of_visits +=1
-            parent.value += value
+            parent.value += value * self.params['gamma'] ** pow
             parent = parent.parent
+            pow +=1
 
 
     def is_fully_expanded(self):

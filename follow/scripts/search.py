@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from treelib import Tree
 import os
+import time
 
 
 class MCTS:
@@ -13,10 +14,11 @@ class MCTS:
         self.human_prob = human_prob
 
 
-    def tree_expantion(self):
+    def tree_expantion(self, T):
         tree_id = 0
 
-        for _ in range(self.params['num_expansion']):
+        # while time.time() < T:
+        for _ in range(50):
             ### Node selection 
             curr_node = self.root
             while(curr_node.number_of_visits > 1):
@@ -38,7 +40,7 @@ class MCTS:
                 child_node.tree_id = tree_id+1
                 tree_id +=1
             
-            # self.draw_tree()
+            self.draw_tree()
         return self.best_child_node()
 
 
@@ -46,7 +48,7 @@ class MCTS:
         if not c:
             return -np.inf
         
-        c_param= 1.
+        c_param= 1.5
         prob = 1.
         if c.state.next_to_move == 0: 
             if c.action == 'left':
@@ -70,8 +72,11 @@ class MCTS:
         self.tree.create_node("parent_("+str(self.root.value/self.root.number_of_visits)+")", 0)
         self.extent_draw_tree(node)
 
-        os.remove("/home/sahar/Follow-ahead-3/MCTS_reaction/scripts/tree.txt")
-        self.tree.save2file('/home/sahar/Follow-ahead-3/MCTS_reaction/scripts/tree.txt')
+        path = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts/tree.txt"
+        if os.path.exists(path):
+            os.remove(path)
+
+        self.tree.save2file(path)
 
     def extent_draw_tree(self, parent):
         for node in parent.children:
@@ -83,6 +88,9 @@ class MCTS:
         return
     
     def evaluate_node(self, node):
+        # immidiate reward
+        r = node.state.calculate_reward(node.state.state)
+        # estimated return
         state = node.state.state
         obs = np.concatenate([
             state[0,:2] - state[1,:2] , [state[1,2]], [state[0,2]]
@@ -90,7 +98,7 @@ class MCTS:
         obs = torch.FloatTensor(obs).unsqueeze(0)
         policy='a2c'
         value = self.params['RL_model'].evaluate_state(obs, policy=policy)
-        return value.item()
+        return r + value.item() * self.params['gamma']
     
     def best_child_node(self):
         visit = []

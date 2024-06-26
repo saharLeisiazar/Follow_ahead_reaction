@@ -66,7 +66,7 @@ np.savetxt(dir +"left.csv", traj,
 #####################
 # straight trajectory
 traj = [[0,0,0.]]
-for i in range(1, 20):
+for i in range(1, 30):
     x = traj[i-1][0] + dist 
     traj.append([x,0.,0.])
 
@@ -78,8 +78,8 @@ np.savetxt(dir +"straight.csv", traj,
 ################
 # left U shape
 traj = [[0,0,0.]]
-for i in range(1,30):
-    if i <5 or i>25:
+for i in range(1,70):
+    if i <25 or i>45:
         turn = 0
     else:
         turn = 8.5 * np.pi/180
@@ -97,8 +97,8 @@ np.savetxt(dir +"left_U.csv", traj,
 ################
 # right U shape
 traj = [[0,0,0.]]
-for i in range(1,30):
-    if i <5 or i>25:
+for i in range(1,70):
+    if i <25 or i>45:
         turn = 0
     else:
         turn = -8.5 * np.pi/180
