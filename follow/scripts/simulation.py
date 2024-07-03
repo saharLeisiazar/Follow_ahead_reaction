@@ -43,7 +43,7 @@ class Tree(object):
         self.params['human_angle'] = 45.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        
 
-        file_name = 'a2c_navigation_or0.zip'
+        file_name = 'a2c_len_50_random_walk.zip'
         model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
@@ -52,6 +52,7 @@ class Tree(object):
     def run(self):
         self.plot_idx = 0
         for traj in self.human_traj:
+            sum_reward = 0.
             traj_state = []
             robot_pose = np.array(traj[self.params['human_history_len']-1]) + [1.5,0.,0.]
             for i in range(len(traj)- self.params['human_history_len']):
@@ -72,7 +73,12 @@ class Tree(object):
                 robot_pose = self.move_robot(state, robot_action)
                 traj_state.append(state)
 
+                ###
+                reward = nav_state.calculate_reward(state)
+                sum_reward += reward
+
             self.plot_state(traj_state)
+            print('sum_reward:', sum_reward)
 
         return
 
