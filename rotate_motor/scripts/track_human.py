@@ -14,41 +14,33 @@ import sys
 # Get camera dimensions
 width, height = (1280,1080)
 
-# Define a global variable to store the timestamp of the last callback invocation
-last_callback_time = None
-
 class human_traj_prediction():
     def __init__(self):
+        print('initializing node')
         rospy.init_node('prediction', anonymous=True)
-        # self.rate = rospy.Rate(2) # 10hz
         
+        print('setting up subscriber and publisher')
         rospy.Subscriber('/zed2/zed_node/obj_det/objects', ObjectsStamped, self.predictions_callback)
+        print('Subscriber setup for /zed2/zed_node/obj_det/objects')
+
         self.pub_cur_pose = rospy.Publisher('/person_pose', PoseStamped, queue_size = 1)
+        print('Publisher setup for /person_pose')
+
         self.pub_pred_pose_all = rospy.Publisher('/person_pose_pred_all', PoseArray, queue_size = 1)
+        print('Publisher setup for /person_pose_pred_all')
+
 
         self.deg_to_res = 1024/90
-        # why do we start from 60? 
         self.goal = 0
-        # self.goal = 60
         self.count = -1
-        self.last_detection_direction = 'none'
-        self.p_x_bounds = []
-
-        # the camera has a vision of 110 degrees
-        # lets say the human is on the very edge, that is at 110 degree
-        # the camera has to rotate 55 degrees to brings human to centre. Thus, max degree
-        self.max_rotation_angle = 55
-        self.notfound = -1
-
+        self.notfound = 0
+        print('Initialization complete')
 
     def send_goal(self):
-        if self.goal >= 360:
-            self.goal -= 360
 
-        elif self.goal <0 :
-            self.goal += 360
+        self.goal = self.goal % 360 # ensures the goal stays in 0-359 range
 
-        print("goal:" , self.goal)
+        print("Sending goal:" , self.goal)
         rospy.wait_for_service('/dynamixel_workbench/dynamixel_command')
         try:
             req = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
@@ -75,80 +67,55 @@ class human_traj_prediction():
 
         return feat
 
+
     def predictions_callback(self,data):
-        
         self.count += 1
-        
-        # Frequency calculation using ros time
-        global last_callback_time
-        current_time = rospy.Time.now()
 
-        if last_callback_time is not None:
-            time_elapsed = (current_time - last_callback_time).to_sec()
-        
-            # Calculate the callback rate (Hz)
-            callback_rate = 1 / time_elapsed
-        else:
-            callback_rate = 99
+        if self.count % 3 == 0:
+            feat = self.human_data(data)
+            # print(feat)
 
-        # Update the timestamp of the last callback invocation
-        last_callback_time = current_time
-
-
-        # slow down using exhaustive wait ( do we really need it )
-        feat = self.human_data(data)
-
-        if(feat != {}):
-            self.p_x_bounds.append((feat['bb_x_min'],feat['bb_x_max']))
-            self.last_detection_direction = 'left' if feat['x'] < width/2 else 'right'
-
-        #######  person is not detected
-        else:
-            # detection at edges is not correct so we will try to make smaller turns but 5 turns to cover entire 360
-            # avg turn to cover 360 degree and cover most visuals in center pixels (62 degree ?? )
-            if(len(self.p_x_bounds) == 0 and self.notfound == -1):
-                print("Looking for the human")
-                if self.last_detection_direction == 'left':
-                    self.goal = abs((self.goal - 62) // 360)
-                else :
-                    self.goal = (self.goal + 62) // 360
-                # self.send_goal()
-
-        if self.count % 5 == 0 or callback_rate < 15:
+            ###### person is not detected
             
+            if feat == {}:
+                print("Looking for the human ...")
+                self.notfound += 1
+                print("Not found count: ", self.notfound)
+                self.goal = (self.goal + 20) % 370
+                self.send_goal()
+                # rospy.sleep(0.3)
+
+
             ###### person is detected
-            if self.p_x_bounds:
-                if len(self.p_x_bounds) % 2 == 0:  # Even number of pairs
-                    sorted_bounds = sorted(self.p_x_bounds)
-                    print(sorted_bounds)
-                    median_pair_index = len(sorted_bounds) // 2
-                    median_pair = sorted_bounds[median_pair_index]
-                else:  # Odd number of pairs
-                    median_pair = statistics.median(self.p_x_bounds)
-                
-                median_bb_x_min, median_bb_x_max = median_pair
-
-                print(self.p_x_bounds)
-                print("median pair : ", median_bb_x_min, median_bb_x_max)
-
-                
-
+            if len(feat):
+                    print("Person detected at x: ", feat['x'])
                 ###### To keep the human in the middle of the image
-                mean_bb = (abs(median_bb_x_min) + abs(median_bb_x_max)) /2
-                
-                # Calculate rotation angle based on mean position
-                turn = ((mean_bb - (width / 2)) / (width / 2)) * self.max_rotation_angle
+    
+                    mean_bb = (feat['bb_x_min'] + feat['bb_x_max']) /2
+                    print("mean_bb: ", mean_bb)
+                    # turn = 10
+                    
+                    # Define center threshold based on a narrower range
+                    center_range_percentage = 0.15  # % on either side of the center
+                    image_center = 1280 / 2
+                    center_threshold_min = image_center * (1 - center_range_percentage)  # 1280 * (1-0.15)/2 = 576 
+                    center_threshold_max = image_center * (1 + center_range_percentage)  # 1280 * (1+0.15)/2 = 704
 
-                if(abs(turn) > 15):
-                    self.goal = (self.goal + turn) // 360
-                    print("rotating ", turn , " deg")
-                    self.send_goal() 
-                    self.notfound = 0
-                self.p_x_bounds = []
 
-        # self.rate.sleep()
+                    if mean_bb < center_threshold_min:
+                        turn = min(10, center_threshold_min - mean_bb)
+                        self.goal += turn
+                        print("rotating ", turn , " deg")
+                        self.send_goal()   
+
+                    elif mean_bb > center_threshold_max:
+                        turn = min(10, mean_bb - center_threshold_max)
+                        self.goal -= turn
+                        print("rotating -", turn , " deg")
+                        self.send_goal() 
 
 
 if __name__ == '__main__':
+    print("Starting the human trejectory prediction node")
     human_traj_prediction()
     rospy.spin()    
