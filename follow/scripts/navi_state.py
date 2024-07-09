@@ -1,5 +1,6 @@
 import numpy as np
 import math 
+import matplotlib.pyplot as plt
 
 class navState(object):
 
@@ -43,14 +44,6 @@ class navState(object):
 
         return new_s
     
-    def assign_values(self, vector, ref_orientation_radians):
-        angle = np.arctan2(vector[1], vector[0])
-        if angle < 0:
-            angle = 2* np.pi + angle
-
-        diff = np.abs(ref_orientation_radians - angle)
-
-        return diff
          
     def calculate_reward(self, state):
         distance = np.linalg.norm(state[0,:2] - state[1, :2])
@@ -61,22 +54,27 @@ class navState(object):
         if diff > 180:
             diff = 360 - diff
 
-        r_d = 0
-        if distance > 5 or distance <0.5:
+        if diff < 50: # 2 *25
+            r_o = 1. * ((25 - diff)/25)
+        else:
+            r_o = -1.
+
+        if distance > 4 or distance <0.5:
             r_d = -1
-        elif distance >0.5 and distance <1:
-            r_d = -(1-distance)
-        elif distance > 1 and distance <2:  
-            r_d = 0. #0.5 * (0.5 - np.abs(distance-1.5))
-        elif distance > 2 and distance <5:
-            r_d = -0.25 * (distance-1)
-        else:
-            pass
+        elif distance >=0.5 and distance <=1:
+            r_d = -2 * (1-distance)
+        elif distance > 1 and distance <=2:  
+            r_d = 2. * (0.5 - np.abs(distance-1.5))
+        elif distance > 2 and distance <=4:
+            r_d = -0.5 * (distance-2)
 
-        if diff < 25:
-            r_o = 0.5 * ((25 - diff)/25)
-        else:
-            r_o = -0.25 * diff / 180
+        ### from [-1,1] to [0,1]
+        r_d /= 2
+        r_d += 0.500000001
+        ### from [-1,1] to [1,3]
+        r_o += 2
 
-        return min(max(r_o + r_d, -1), 1)
-    
+        r = r_d * r_o if r_o > 1 else -1
+        return r
+
+  

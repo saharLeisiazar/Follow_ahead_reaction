@@ -40,7 +40,7 @@ class MCTS:
                 child_node.tree_id = tree_id+1
                 tree_id +=1
             
-            self.draw_tree()
+            # self.draw_tree()
         return self.best_child_node()
 
 
@@ -104,8 +104,8 @@ class MCTS:
         obs = torch.FloatTensor(obs).unsqueeze(0)
         policy='a2c'
         value = self.params['RL_model'].evaluate_state(obs, policy=policy)
-        # return value.item() 
-        return r + value.item() * self.params['gamma']
+
+        return 10*r + value.item() * self.params['gamma']
     
     def best_child_node(self):
         visit = []
