@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+import math
+import matplotlib.pyplot as plt
+import os
 import statistics
 import rospy
 import numpy as np
@@ -14,6 +16,8 @@ import sys
 
 # Get camera dimensions
 width, height = (1280,1080)
+#for testing
+save_file = "Human_positions.npy"
 
 class human_traj_prediction():
     def __init__(self):
@@ -42,6 +46,11 @@ class human_traj_prediction():
         self.notfound = 0
         self.robot_position = [0,0,0]
         self.robot_orientation = np.eye(3)
+        self.motor_rotation_angle = 0.0
+        
+        #For testing
+        self.human_global_pos = []
+
         print('Initialization complete')
 
     def send_goal(self):
@@ -54,8 +63,8 @@ class human_traj_prediction():
             req = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
             goal_res = int(self.goal* self.deg_to_res)
             print('goal value', goal_res)
-            resp1 = req('', 1, 'Goal_Position', goal_res)
-            # print(resp1.comm_result)
+            resp1 = req('', 1, 'Goal_Position', goal_res) #update motor rotation angle
+            self.motor_rotation_angle = self.goal * (math.pi/180)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
@@ -77,7 +86,7 @@ class human_traj_prediction():
 
         return feat
 
-    ###### To get the global coordinates published by the robot
+    # To get the global coordinates published by the robot
     def robot_position_callback(self, data):
         self.robot_position = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
 
@@ -92,7 +101,12 @@ class human_traj_prediction():
     
     def transform_to_global(self, local_coords):
         local_coords = np.array(local_coords)
-        global_coords = np.dot(self.robot_orientation, local_coords) + self.robot_position
+        # rorationmatix for the motor
+        motor_rotation_matrix = np.array([[math.cos(self.motor_rotation_angle), -math.sin(self.motor_rotation_angle), 0],
+                                           [math.sin(self.motor_rotation_angle), math.cos(self.motor_rotation_angle), 0],
+                                           [0, 0, 1]])
+        rotated_local_coords = np.dot(motor_rotation_matrix, local_coords)
+        global_coords = np.dot(self.robot_orientation, rotated_local_coords) + self.robot_position
         return global_coords
 
     def predictions_callback(self,data):
@@ -100,10 +114,8 @@ class human_traj_prediction():
 
         if self.count % 3 == 0:
             feat = self.human_data(data)
-            # print(feat)
 
-            ###### person is not detected
-            
+            ###### person is not detected            
             if feat == {}:
                 print("Looking for the human ...")
                 self.notfound += 1
@@ -146,6 +158,11 @@ class human_traj_prediction():
                     human_position_global = self.transform_to_global(feat['position'])
                     print("Human position in global coordinates: ", human_position_global)
 
+                    # for testing: store human pos for plotting and testing
+                    self.human_global_pos.append(human_position_global.tolist())
+                    # print("current global position shage: ", np.array(self.human_global_pos).shape)
+                    self.save_positions()
+
                     # Publish the current human position
                     point = PointStamped()
                     point.header.stamp = rospy.Time.now()
@@ -154,8 +171,35 @@ class human_traj_prediction():
                     point.point.y = human_position_global[1]
                     point.point.z = human_position_global[2]
                     self.pub_glob_coords.publish(point)
+    
+    #For testing
+    def save_positions (self):
+        np.save(save_file, np.array(self.human_global_pos))
+        print(f"saved to {save_file}")
+
+    # For Testing: To plot the global position of human for testing
+    def plot_human_positions(self):
+        # global_positions = np.array(self.human_global_pos)
+        if os.path.exists(save_file):
+            global_positions = np.load(save_file)
+        print(f"Global position shape: {global_positions.shape}")
+        x_coords = global_positions[:,0]
+        y_coords = global_positions[:,1]
+        z_coords = global_positions[:,2]
+
+        plt.figure()
+        plt.plot(x_coords, y_coords, 'o-', label='Human Trajectory')
+        plt.title("Human Position in Global Coordinates")
+        plt.xlim(-6,6)
+        plt.ylim(-6,6)
+        plt.legend()
+        plt.grid()
+        plt.show()
+
 
 if __name__ == '__main__':
     print("Starting the human trejectory prediction node")
     human_traj_prediction()
-    rospy.spin()    
+    rospy.spin()   
+
+    human_traj_prediction().plot_human_positions() 
