@@ -53,6 +53,19 @@ class human_traj_prediction():
 
         print('Initialization complete')
 
+    # def get_current_motor_angle(self):
+    #     rospy.wait_for_service('/dynamixel_workbench/dynamixel_command')
+    #     try:
+    #         req = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
+    #         response = req('',1,'Present_Position',2)
+    #         current_position = response.value
+    #         current_angle = current_position / self.deg_to_res
+    #         print(f'Current motor angle: {current_angle} degrees')
+    #         return math.radians(current_angle)
+    #     except rospy.ServiceException as e:
+    #         print("Service call failed: %s"%e)
+    #         return 0.0
+
     def send_goal(self):
 
         self.goal = self.goal % 360 # ensures the goal stays in 0-359 range
@@ -102,6 +115,7 @@ class human_traj_prediction():
     def transform_to_global(self, local_coords):
         local_coords = np.array(local_coords)
         # rorationmatix for the motor
+        # motor_rotation_angle = self.get_current_motor_angle()
         motor_rotation_matrix = np.array([[math.cos(self.motor_rotation_angle), -math.sin(self.motor_rotation_angle), 0],
                                            [math.sin(self.motor_rotation_angle), math.cos(self.motor_rotation_angle), 0],
                                            [0, 0, 1]])
