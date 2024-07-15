@@ -40,10 +40,10 @@ class Tree(object):
         self.params['robot_vel'] = 1.0
         self.params['robot_vel_fast_lamda'] = 1.7
         self.params['robot_angle'] = 45.
-        self.params['human_angle'] = 45.
+        self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        
 
-        file_name = 'a2c_len_50_random_walk_new_sahar_rew_small_net.zip'
+        file_name = 'multiply_rewards_1.zip'
         model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
@@ -54,7 +54,7 @@ class Tree(object):
         for traj in self.human_traj:
             sum_reward = 0.
             traj_state = []
-            robot_pose = np.array(traj[self.params['human_history_len']-1]) + [1.5,0.,0.]
+            robot_pose = np.array(traj[self.params['human_history_len']-1]) + [1.3,0.,0.]
             for i in range(len(traj)- self.params['human_history_len']):
                 # get the human prob destribution
                 history_seq = np.array(traj[i:i+self.params['human_history_len']])
@@ -62,8 +62,8 @@ class Tree(object):
                 # human_prob = {'left': 1., 'straight': 1., 'right': 1.}
 
                 # expand the tree
-                # if i==11:
-                #     print('here')
+                if i==6:
+                    print('here')
                 state = np.array([robot_pose, history_seq[-1]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  

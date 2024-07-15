@@ -5,6 +5,31 @@ def human_traj_generator(human_vel, dt):
     init= [0.,0.,0.]
     dist = human_vel* dt
 
+   ################
+    # U shape
+    traj = [init]
+    for i in range(1,45):
+        if i <20 or i>40:
+            turn = 0
+        else:
+            turn = -8.5 * np.pi/180
+
+        x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
+        y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
+        theta = turn + traj[i-1][2]
+        traj.append([x,y,theta])
+
+    traj_list.append(traj)
+    
+    ################
+    #straight trajectory
+    traj = [init]
+    for i in range(1, 25):
+        x = traj[i-1][0] + dist 
+        traj.append([x,0.,0.])
+
+    traj_list.append(traj)
+
     ################
     # U shape
     traj = [init]
@@ -21,21 +46,7 @@ def human_traj_generator(human_vel, dt):
 
     traj_list.append(traj)
 
-    ################
-    # U shape
-    traj = [init]
-    for i in range(1,45):
-        if i <20 or i>40:
-            turn = 0
-        else:
-            turn = -8.5 * np.pi/180
-
-        x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
-        y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
-        theta = turn + traj[i-1][2]
-        traj.append([x,y,theta])
-
-    traj_list.append(traj)
+ 
 
     ################
     # S shape
@@ -100,13 +111,7 @@ def human_traj_generator(human_vel, dt):
 
 
     ################
-    #straight trajectory
-    traj = [init]
-    for i in range(1, 25):
-        x = traj[i-1][0] + dist 
-        traj.append([x,0.,0.])
 
-    traj_list.append(traj)
 
 
     return traj_list

@@ -54,10 +54,10 @@ class navState(object):
         if diff > 180:
             diff = 360 - diff
 
-        if diff < 50: # 2 *25
-            r_o = 1. * ((25 - diff)/25)
-        else:
-            r_o = -1.
+        # if diff < 50: # 2 *25
+        r_o = 1. * ((25 - diff)/25)
+        # else:
+        #     r_o = -1.
 
         if distance > 4 or distance <0.5:
             r_d = -1
@@ -72,9 +72,9 @@ class navState(object):
         r_d /= 2
         r_d += 0.500000001
         ### from [-1,1] to [1,3]
-        r_o += 2
+        # r_o += 2
 
-        r = r_d * r_o if r_o > 1 else -1
+        r = r_d + r_o #if r_o > 1 else -1
         return r
 
   
