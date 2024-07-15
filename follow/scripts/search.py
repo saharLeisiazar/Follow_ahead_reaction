@@ -55,16 +55,16 @@ class MCTS:
         
         c_param= 0.5
         prob = 1.
-        # if c.state.next_to_move == 0: 
-        #     if c.action == 'left':
-        #         prob = self.human_prob['left']
-        #     elif c.action == 'straight':
-        #         prob = self.human_prob['straight']
-        #     elif c.action == 'right':
-        #         prob = self.human_prob['right']
+        if c.state.next_to_move == 0: 
+            if c.action == 'left':
+                prob = self.human_prob['left']
+            elif c.action == 'straight':
+                prob = self.human_prob['straight']
+            elif c.action == 'right':
+                prob = self.human_prob['right']
 
-        # else:
-        #     prob = 1.      
+        else:
+            prob = 1.      
 
         UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))  * prob
         return UCB
