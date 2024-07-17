@@ -12,12 +12,10 @@ class MCTS:
         self.params = node.params
         self.next_node_candidates = []
         self.human_prob = human_prob
-        # self.leaf_nodes = np.array([])
 
 
     def tree_expantion(self, T):
         tree_id = 0
-        # self.leaf_nodes = np.append(self.leaf_nodes, self.root)
 
         # while time.time() < T:
         for _ in range(50):
@@ -33,8 +31,6 @@ class MCTS:
 
             ### at this point current node is a leaf node
             ### Node expantion
-
-            # self.leaf_nodes = np.delete(self.leaf_nodes, np.where(self.leaf_nodes == curr_node))
             while not curr_node.is_fully_expanded():
                 child_node = curr_node.expand()
                 if child_node == None:
@@ -43,7 +39,6 @@ class MCTS:
                 child_node.backpropagate()
                 child_node.tree_id = tree_id+1
                 tree_id +=1
-                # self.leaf_nodes = np.append(self.leaf_nodes, child_node)
             
             # self.draw_tree()
         return self.best_child_node()
@@ -53,7 +48,7 @@ class MCTS:
         if not c:
             return -np.inf
         
-        c_param= 0.5
+        c_param= 5.
         prob = 1.
         if c.state.next_to_move == 0: 
             if c.action == 'left':
@@ -129,8 +124,8 @@ class MCTS:
             return self.root.children[-1]
         elif visit[2] == visit[idx]:
             return self.root.children[2]
-        elif visit[0] == visit[1]:
+        elif visit[0] == visit[1] == visit[idx]:
             return self.root.children[2] ## if fast left == fast right then take fast straight
-        elif visit[3] == visit[4]:
+        elif visit[3] == visit[4] == visit[idx]:
             return self.root.children[5]  ## if left == right then take straight
         return self.root.children[np.argmax(visit)]        

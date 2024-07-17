@@ -1,4 +1,5 @@
-from sim_human_traj_generate import human_traj_generator
+from sim_human_traj_generate import human_traj_generator as human_smooth_traj
+from sim_human_traj_generate_sudden_move import human_traj_generator as human_sudden_traj
 from human_prob_dist import prob_dist, LSTMModel2D
 from nodes import MCTSNode
 from search import MCTS
@@ -32,13 +33,14 @@ class Tree(object):
     def __init__(self, params):
         #parameters
         self.params = params 
-        self.human_traj = human_traj_generator(self.params['human_vel'], self.params['dt'])
+        self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
+        # self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
         self.human_prob = prob_dist(self.params['human_prob_model_dir'])
 
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['robot_vel'] = 1.0
-        self.params['robot_vel_fast_lamda'] = 1.7
+        self.params['robot_vel_fast_lamda'] = 2.0
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        
@@ -62,7 +64,7 @@ class Tree(object):
                 # human_prob = {'left': 1., 'straight': 1., 'right': 1.}
 
                 # expand the tree
-                if i==6:
+                if i==11:
                     print('here')
                 state = np.array([robot_pose, history_seq[-1]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
