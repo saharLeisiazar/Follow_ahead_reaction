@@ -5,6 +5,24 @@ def human_traj_generator(human_vel, dt):
     init= [0.,0.,0.]
     dist = human_vel* dt
 
+    ################
+    # S shape
+    traj = [init]
+    for i in range(1,50):
+        if i <10 :
+            turn = 5 * np.pi/180
+        elif i < 30:
+            turn = -5 * np.pi/180
+        else:    
+            turn = 5 * np.pi/180
+
+        x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
+        y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
+        theta = turn + traj[i-1][2]
+        traj.append([x,y,theta])
+
+    traj_list.append(traj)
+    
    ################
     # U shape
     traj = [init]
@@ -48,23 +66,7 @@ def human_traj_generator(human_vel, dt):
 
  
 
-    ################
-    # S shape
-    traj = [init]
-    for i in range(1,50):
-        if i <10 :
-            turn = 5 * np.pi/180
-        elif i < 30:
-            turn = -5 * np.pi/180
-        else:    
-            turn = 5 * np.pi/180
 
-        x = traj[i-1][0] + dist * np.cos(turn + traj[i-1][2])
-        y = traj[i-1][1] + dist * np.sin(turn + traj[i-1][2])
-        theta = turn + traj[i-1][2]
-        traj.append([x,y,theta])
-
-    traj_list.append(traj)
 
     ################
     # S shape

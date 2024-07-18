@@ -1,8 +1,8 @@
 from sim_human_traj_generate import human_traj_generator as human_smooth_traj
-from sim_human_traj_generate_sudden_move import human_traj_generator as human_sudden_traj
+from sim_human_traj_generate_sudden_move_prev_work import human_traj_generator as human_sudden_traj
 # from human_prob_dist import prob_dist, LSTMModel2D
-from nodes import MCTSNode
-from search_prev import MCTS
+from nodes_prev_work import MCTSNode
+from search_prev_work import MCTS
 from navi_state import navState
 from RL_interface import RL_model
 
@@ -34,8 +34,8 @@ class Tree(object):
     def __init__(self, params):
         #parameters
         self.params = params 
-        self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
-        # self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
+        # self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
+        self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
         # self.human_prob = prob_dist(self.params['human_prob_model_dir'])
 
         self.params['human_acts'] = self.define_human_actions()
@@ -64,15 +64,15 @@ class Tree(object):
                 human_future = self.extrapolate(history_seq)
 
                 # expand the tree
-                # if i==11:
-                #     print('here')
+                if i==29:
+                    print('here')
                 state = np.array([robot_pose, history_seq[-1]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
                 mcts = MCTS(node_human, human_future)
-                robot_action = mcts.tree_expantion(time.time() + self.params['expansion_time']).action
+                best_leaf_node = mcts.tree_expantion(time.time() + self.params['expansion_time'])
 
-                robot_pose = self.move_robot(state, robot_action)
+                robot_pose = self.move_robot(state, best_leaf_node)
                 traj_state.append(state)
 
                 ###
@@ -135,14 +135,24 @@ class Tree(object):
         return
 
     def move_robot(self, state, robot_action):
+        # if not best_leaf_node:
+        #     return state[0]
+        # goal = best_leaf_node.state.state[0]
+        # curr = state[0]
+        # theta = np.arctan2(goal[1]-curr[1], goal[0]-curr[0])
+        # angle = theta - curr[2]
+
+        # new_s = np.copy(curr)
+        # new_s[0] = curr[0] + 0.2 * np.cos(angle + curr[2])
+        # new_s[1] = curr[1] + 0.2 * np.sin(angle + curr[2])
+        # new_s[2] = angle + curr[2] 
+
         nav_state = navState(params = self.params, state=state, next_to_move= 0)
         new_state = nav_state.move(robot_action)
         return new_state.state[0]
 
     def define_human_actions(self):             
-        actions = {0: "left",
-                1: "right",
-                2: "straight"}
+        actions = {0: "straight"}
                
         return actions
     
