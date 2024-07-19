@@ -17,8 +17,8 @@ class MCTS:
     def tree_expantion(self, T):
         tree_id = 0
 
-        # while time.time() < T:
-        for _ in range(50):
+        while time.time() < T:
+        # for _ in range(50):
             ### Node selection 
             curr_node = self.root
             while(curr_node.number_of_visits > 1):
@@ -89,9 +89,9 @@ class MCTS:
     def evaluate_node(self, node):
         # immidiate reward
         r = node.state.calculate_reward(node.state.state)
+
         # estimated return
         state = node.state.state
-        # state += [[0., -0.8, 0.],[0., 0., 0.]]
         obs = np.concatenate([
             state[0,:2] - state[1,:2] , [state[0,2]-state[1,2]]
         ])
@@ -102,14 +102,6 @@ class MCTS:
         return  r + value.item() /10 * self.params['gamma']
     
     def best_child_node(self):
-        # leaf_values = []
-        # for c in self.leaf_nodes:
-        #     if c.state.next_to_move == 0:
-        #         c = c.parent
-
-        #     leaf_values.append(c.value/c.number_of_visits)
-
-        # return self.leaf_nodes[np.argmax(leaf_values)]
         visit = []
         for node in self.root.children:
             if node:

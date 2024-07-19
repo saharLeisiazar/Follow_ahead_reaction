@@ -65,6 +65,7 @@ class MCTSNode(object):
             return True
 
     def any_obs(self, s, sp):
+        return False
         if self.params['sim']:
             return False
         
@@ -104,6 +105,6 @@ class MCTSNode(object):
     def is_fully_expanded(self):
         if self.state.next_to_move == 1:
             return len(self.children) == len(self.params["human_acts"])
-        else :
+        else:
             return len(self.children) == len(self.params["robot_acts"])
         

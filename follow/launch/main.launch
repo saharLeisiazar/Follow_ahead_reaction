@@ -2,9 +2,9 @@
 
 <launch>
 
-    <!--include file="$(find vicon_bridge)/launch/vicon.launch"/-->
+    <include file="$(find vicon_bridge)/launch/vicon.launch"/>
     <!-- <node pkg="rosbag" type="play" name="rosbag" args="-l /home/sahar/catkin_ws/bag/2024-05-15-14-48-58.bag"/>   -->
-    <node pkg="map_server" type="map_server" name="map_server" args="/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/croped_map.yaml"/>
+    <!-- <node pkg="map_server" type="map_server" name="map_server" args="/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/croped_map.yaml"/> -->
     <node pkg="follow" type="main.py" name="main" output="screen"/>
 
 </launch>
