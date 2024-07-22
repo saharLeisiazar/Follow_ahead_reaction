@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--sim', type=bool, default= True)
     parser.add_argument('--expansion_time', type=int, default= 0.15)
     parser.add_argument('--gamma', type=float, default= 0.90)
-    parser.add_argument('--human_vel', type=int, default= 1.)
+    parser.add_argument('--human_vel', type=int, default= 0.6)
     parser.add_argument('--dt', type=int, default= 0.2)
     parser.add_argument('--human_history_len', type=int, default= 15)
     parser.add_argument('--human_prob_model_dir', type=str, default= "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth")
@@ -39,8 +39,8 @@ class Tree(object):
 
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
-        self.params['robot_vel'] = 1.0
-        self.params['robot_vel_fast_lamda'] = 2.0
+        self.params['robot_vel'] = 0.6
+        self.params['robot_vel_fast_lamda'] = 1.5
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        
@@ -60,13 +60,16 @@ class Tree(object):
             for i in range(len(traj)- self.params['human_history_len']):
                 # get the human prob destribution
                 history_seq = np.array(traj[i:i+self.params['human_history_len']])
-                human_prob = self.human_prob.forward(history_seq[:, :2])
-                # human_prob = {'left': 1., 'straight': 1., 'right': 1.}
+                # human_prob = self.human_prob.forward(history_seq[:, :2])
+                human_prob = {'left': 0.1, 'straight': 0.8, 'right': 0.9}
 
                 # expand the tree
-                if i==11:
-                    print('here')
+                # if i==11:
+                #     print('here')
                 state = np.array([robot_pose, history_seq[-1]])
+
+
+                state = np.array([[2.47,1.96,2.18],[0.58,-0.38,2.13]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
                 mcts = MCTS(node_human, human_prob)

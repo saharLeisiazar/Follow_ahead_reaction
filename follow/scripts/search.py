@@ -16,9 +16,10 @@ class MCTS:
 
     def tree_expantion(self, T):
         tree_id = 0
-
-        while time.time() < T:
-        # for _ in range(50):
+        # print(time.time()).
+        tt = time.time()
+        # while time.time() < T:
+        for _ in range(1):
             ### Node selection 
             curr_node = self.root
             while(curr_node.number_of_visits > 1):
@@ -41,6 +42,8 @@ class MCTS:
                 tree_id +=1
             
             # self.draw_tree()
+        ttt = time.time() - tt
+        print(ttt)
         return self.best_child_node()
 
 
