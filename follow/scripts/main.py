@@ -26,9 +26,9 @@ class node():
         rospy.init_node('main', anonymous=True)
 
         self.params= {}
-        self.params['robot_vel'] = 0.3
+        self.params['robot_vel'] = 0.6
         self.params['robot_vel_fast_lamda'] = 1.5
-        self.params['human_vel'] = 1.0
+        self.params['human_vel'] = 0.6
         self.params['dt'] = 0.2
         self.params['gamma'] = 0.9
         self.params['robot_angle'] = 45.
@@ -103,14 +103,11 @@ class node():
         
 
         ######## Expanding the tree search
-        # state = np.array([[0.,0.,0.],[human_p.x, human_p.y, human_z]])
+        # state = np.array([[0.,0.,0.],[human_x, human_y, human_z]])
         state = np.array([[robot_x, robot_y, robot_z],[human_x, human_y, human_z]])
         self.move()
         
         if time.time() - self.time > (1./self.freq):
-            print()
-            print("new data")
-            print("state: ", state)
             self.time = time.time()
             self.human_history.append([human_p.x, human_p.y])
             if len(self.human_history) > self.human_history_length:
@@ -118,9 +115,9 @@ class node():
                 # human_prob = self.human_prob.forward(self.human_history)
                 human_prob = {'left': 0.1, 'straight': 0.9, 'right': 0.1}
 
-                temp = time.time()
-                # self.best_action = self.expand_tree(state, human_prob) 
-                print("expansion time", time.time()-temp)
+                self.best_action = self.expand_tree(state, human_prob) 
+                print()
+                print("state: ", state)
                 print("action", self.best_action)
 
                 self.pub_marker("robot", self.marker_id, state)
@@ -184,7 +181,7 @@ class node():
         if action == "fast_straight" or action == "fast_right" or action == "fast_left":
             V *= self.params['robot_vel_fast_lamda']
 
-        W = self.params['robot_angle'] * np.pi / 180 /3 # / self.params['dt']
+        W = self.params['robot_angle'] * np.pi / 180  
         if action == "straight" or action == "fast_straight":
             W = 0
         elif action == "right" or action == "fast_right":
@@ -220,17 +217,17 @@ class node():
         else:
             euler = [0, 0, pose[2]]
             quat = R.from_euler('xyz', euler, degrees=False).as_quat()
-            print(quat)
+            # print(quat)
             m.pose.orientation.z = quat[2]
-            m.pose.orientation.w = -quat[3]
+            m.pose.orientation.w = quat[3]
 
         m.scale.x = .1 if not arrow else .5
         m.scale.y = .1
         m.scale.z = .1
 
         m.color.r = 1. if name == "robot" else 0
-        m.color.g = 0. if name == "robot" else 1
-        m.color.b = 0.
+        m.color.g = 0.
+        m.color.b = 0. if name == "robot" else 1
         m.color.a = 1.
 
 
