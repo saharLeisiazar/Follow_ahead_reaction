@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--sim', type=bool, default= True)
     parser.add_argument('--expansion_time', type=int, default= 0.15)
     parser.add_argument('--gamma', type=float, default= 0.90)
-    parser.add_argument('--human_vel', type=int, default= 1.)
+    parser.add_argument('--human_vel', type=int, default= 0.6)
     parser.add_argument('--dt', type=int, default= 0.2)
     parser.add_argument('--human_history_len', type=int, default= 15)
     parser.add_argument('--human_prob_model_dir', type=str, default= "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth")
@@ -39,8 +39,8 @@ class Tree(object):
 
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
-        self.params['robot_vel'] = 1.
-        self.params['robot_vel_fast_lamda'] = 2.
+        self.params['robot_vel'] = 0.6
+        self.params['robot_vel_fast_lamda'] = 1.7
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        

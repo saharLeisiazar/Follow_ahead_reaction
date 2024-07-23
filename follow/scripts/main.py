@@ -26,9 +26,9 @@ class node():
         rospy.init_node('main', anonymous=True)
 
         self.params= {}
-        self.params['robot_vel'] = 0.6
+        self.params['robot_vel'] = 0.5
         self.params['robot_vel_fast_lamda'] = 1.5
-        self.params['human_vel'] = 0.6
+        self.params['human_vel'] = 0.5
         self.params['dt'] = 0.2
         self.params['gamma'] = 0.9
         self.params['robot_angle'] = 45.
@@ -47,7 +47,7 @@ class node():
         human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
         self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
-        self.human_history_length = 0    #15
+        self.human_history_length = 15
         self.marker_id = 0
         # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
         # rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
@@ -112,8 +112,9 @@ class node():
             self.human_history.append([human_p.x, human_p.y])
             if len(self.human_history) > self.human_history_length:
                 self.human_history.pop(0)
-                # human_prob = self.human_prob.forward(self.human_history)
-                human_prob = {'left': 0.1, 'straight': 0.9, 'right': 0.1}
+                human_prob = self.human_prob.forward(self.human_history)
+                print("human_prob: ", human_prob)
+                # human_prob = {'left': 0.1, 'straight': 0.9, 'right': 0.1}
 
                 self.best_action = self.expand_tree(state, human_prob) 
                 print()
@@ -168,7 +169,7 @@ class node():
             beta = np.arctan2(s[0,1] - s[1,1] , s[0,0] - s[1,0])   # atan2 (yr - yh  , xr - xh)           
             alpha = np.absolute(s[1,2] - beta) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
     
-            if D > 2.2:
+            if D > 1.5:
                 return True
 
             self.stay_bool = False

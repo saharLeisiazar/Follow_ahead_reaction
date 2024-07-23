@@ -114,6 +114,7 @@ class MCTS:
       
         # print(visit)
         idx = np.argmax(visit)
+        print("visit: ", visit)
 
         if visit[-1] == visit[idx]:
             return self.root.children[-1]
