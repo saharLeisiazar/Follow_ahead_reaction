@@ -67,9 +67,7 @@ class Tree(object):
                 # if i==11:
                 #     print('here')
                 state = np.array([robot_pose, history_seq[-1]])
-
-
-                state = np.array([[-0.47, -1.04, 0.03],[-2.5, -1.06, -0.02]])
+                # state = np.array([[-0.47, -1.04, 0.03],[-2.5, -1.06, -0.02]])
                 nav_state = navState(params = self.params, state=state, next_to_move= 0)
                 node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
                 mcts = MCTS(node_human, human_prob)
