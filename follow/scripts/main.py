@@ -50,7 +50,7 @@ class node():
         self.human_history_length = 15
         self.marker_id = 0
         # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
-        # rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
+        rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
         # rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
 
         # helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
@@ -149,8 +149,6 @@ class node():
         self.robot_x = robot_x
         self.robot_y = robot_y
 
-
-
     def expand_tree(self, state, human_prob=None):
         if not self.stay(state):
             nav_state = navState(params = self.params, state=state, next_to_move= 0)
@@ -160,7 +158,6 @@ class node():
 
         else:
             print("Waiting ...")
-
 
     def stay(self, s):
         # return False
@@ -196,7 +193,6 @@ class node():
         t.linear.x = V
         t.angular.z = W
         self.move_robot.publish(t)
-
 
     def pub_marker(self, name, id, state, arrow=False):
         m = Marker()
@@ -241,10 +237,6 @@ class node():
         elif name =="human":    
             self.pub_human_arrow.publish(m)
 
-
-
-
-
     def define_human_actions(self):             
         actions = {0: "left",
                 1: "right",
@@ -262,8 +254,8 @@ class node():
              
         return actions
 
-
     def costmap_callback(self, data):
+        print(1)
 
         self.params['map_origin_x'] = data.info.origin.position.x
         self.params['map_origin_y'] = data.info.origin.position.y
@@ -272,7 +264,7 @@ class node():
         self.params['map_width'] = data.info.width
 
         x = int(np.rint((0. - self.params['map_origin_x']) / self.params['map_res']))
-        y = int(np.rint((0. - self.params['map_origin_y']) / self.params['map_res']))
+        y = int(np.rint((-2. - self.params['map_origin_y']) / self.params['map_res']))
         cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
         print(cost)
 
