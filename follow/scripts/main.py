@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-from human_prob_dist import prob_dist, LSTMModel2D
+import sys
+sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts')
+
+# from human_prob_dist import prob_dist, LSTMModel2D
 from RL_interface import RL_model
 
 import numpy as np
@@ -38,6 +41,7 @@ class node():
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['expansion_time'] = 0.15
+        self.params['sim'] = False
         # self.params['num_expansion'] = 60
         self.stay_bool = True
         self.time = time.time()
@@ -45,7 +49,7 @@ class node():
         self.best_action = None
 
         human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
-        self.human_prob = prob_dist(human_prob_model_dir)
+        # self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
         self.human_history_length = 15
         self.marker_id = 0
@@ -112,9 +116,9 @@ class node():
             self.human_history.append([human_p.x, human_p.y])
             if len(self.human_history) > self.human_history_length:
                 self.human_history.pop(0)
-                human_prob = self.human_prob.forward(self.human_history)
-                print("human_prob: ", human_prob)
-                # human_prob = {'left': 0.1, 'straight': 0.9, 'right': 0.1}
+                # human_prob = self.human_prob.forward(self.human_history)
+                # print("human_prob: ", human_prob)
+                human_prob = {'left': 1., 'straight': 1., 'right': 1.}
 
                 self.best_action = self.expand_tree(state, human_prob) 
                 print()
@@ -263,10 +267,10 @@ class node():
         self.params['map_data'] = data.data
         self.params['map_width'] = data.info.width
 
-        x = int(np.rint((0. - self.params['map_origin_x']) / self.params['map_res']))
-        y = int(np.rint((-2. - self.params['map_origin_y']) / self.params['map_res']))
-        cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
-        print(cost)
+        # x = int(np.rint((0. - self.params['map_origin_x']) / self.params['map_res']))
+        # y = int(np.rint((-2. - self.params['map_origin_y']) / self.params['map_res']))
+        # cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
+        # print(cost)
 
 
 

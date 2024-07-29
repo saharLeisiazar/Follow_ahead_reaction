@@ -69,8 +69,8 @@ class MCTSNode(object):
         if self.params['sim']:
             return False
         
-        x = int(np.rint((sp[0] - self.params['map_info']['origin_x']) / self.params['map_info']['res']))
-        y = int(np.rint((sp[1] - self.params['map_info']['origin_y']) / self.params['map_info']['res']))
+        x = int(np.rint((sp[0] - self.params['map_origin_x']) / self.params['map_res']))
+        y = int(np.rint((sp[1] - self.params['map_origin_y']) / self.params['map_res']))
 
         cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
 
