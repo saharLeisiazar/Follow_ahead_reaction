@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import sys
-sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts')
+# import sys
+# sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts')
 
-# from human_prob_dist import prob_dist, LSTMModel2D
+from human_prob_dist import prob_dist, LSTMModel2D
 from RL_interface import RL_model
 
 import numpy as np
@@ -13,7 +13,7 @@ from nodes import MCTSNode
 from search import MCTS
 from navi_state import navState
 
-import message_filters
+# import message_filters
 import rospy
 from geometry_msgs.msg import TransformStamped
 from scipy.spatial.transform import Rotation as R
@@ -29,9 +29,9 @@ class node():
         rospy.init_node('main', anonymous=True)
 
         self.params= {}
-        self.params['robot_vel'] = 0.5
+        self.params['robot_vel'] = 0.6
         self.params['robot_vel_fast_lamda'] = 1.5
-        self.params['human_vel'] = 0.5
+        self.params['human_vel'] = 0.6
         self.params['dt'] = 0.2
         self.params['gamma'] = 0.9
         self.params['robot_angle'] = 45.
@@ -49,13 +49,11 @@ class node():
         self.best_action = None
 
         human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
-        # self.human_prob = prob_dist(human_prob_model_dir)
+        self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
         self.human_history_length = 15
         self.marker_id = 0
-        # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
         rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
-        # rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
 
         # helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
         # robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
@@ -66,8 +64,6 @@ class node():
         rospy.Subscriber("vicon/helmet_sahar/root", TransformStamped, self.helmet_callback, buff_size=1)
         rospy.Subscriber("vicon/robot_sahar/root", TransformStamped, self.robot_callback, buff_size=1)
 
-        # self.pub_goal = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size =1)
-        # self.pub_goal_vis = rospy.Publisher('/goal_vis', Marker, queue_size =1)
         self.move_robot = rospy.Publisher('/robot/robotnik_base_control/cmd_vel', Twist, queue_size = 1)
         self.pub_robot_traj = rospy.Publisher('/robot_traj', Marker, queue_size = 1)
         self.pub_human_traj = rospy.Publisher('/human_traj', Marker, queue_size = 1)
@@ -78,6 +74,11 @@ class node():
         model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
+
+        self.robot_x = 0.
+        self.robot_y = 0.
+        self.robot_z = 0.0
+        print("should be ready")
                
 
     def helmet_callback(self, helmet):
@@ -91,6 +92,7 @@ class node():
         
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         human_z = r.as_euler('zyx', degrees=False)[2]
+        # print(human_z)
         human_z *= -1
         human_z -= np.pi/2
         
@@ -116,9 +118,9 @@ class node():
             self.human_history.append([human_p.x, human_p.y])
             if len(self.human_history) > self.human_history_length:
                 self.human_history.pop(0)
-                # human_prob = self.human_prob.forward(self.human_history)
+                human_prob = self.human_prob.forward(self.human_history)
                 # print("human_prob: ", human_prob)
-                human_prob = {'left': 1., 'straight': 1., 'right': 1.}
+                # human_prob = {'left': 1., 'straight': 1., 'right': 1.}
 
                 self.best_action = self.expand_tree(state, human_prob) 
                 print()
@@ -136,7 +138,8 @@ class node():
         orien = robot.transform.rotation
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         robot_z = r.as_euler('zyx', degrees=False)[2]
-        robot_z *= -1
+        
+        # robot_z *= -1
         robot_z -= np.pi/2
         
         if robot_z < -np.pi:
@@ -144,6 +147,7 @@ class node():
         if robot_z > np.pi:
             robot_z -= 2*np.pi
 
+        # print(robot_z)
         robot_p = robot.transform.translation
         theta = 90 * np.pi / 180
         rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -158,7 +162,11 @@ class node():
             nav_state = navState(params = self.params, state=state, next_to_move= 0)
             node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
             mcts = MCTS(node_human, human_prob)
-            return  mcts.tree_expantion(time.time()+ self.params['expansion_time']).action
+            best_node = mcts.tree_expantion(time.time()+ self.params['expansion_time'])
+            if best_node:
+                return  best_node.action
+            else:
+                return "stop"
 
         else:
             print("Waiting ...")
@@ -189,13 +197,14 @@ class node():
         elif action == "right" or action == "fast_right":
             W *= -1
 
-        elif action == None:
+        elif action == 'stop' or action == None:
             V = 0
             W = 0
 
         t = Twist()
         t.linear.x = V
         t.angular.z = W
+        # print("V: ", V)
         self.move_robot.publish(t)
 
     def pub_marker(self, name, id, state, arrow=False):
@@ -261,8 +270,8 @@ class node():
     def costmap_callback(self, data):
         print(1)
 
-        self.params['map_origin_x'] = data.info.origin.position.x
-        self.params['map_origin_y'] = data.info.origin.position.y
+        self.params['map_origin_x'] = data.info.origin.position.x - 0.5
+        self.params['map_origin_y'] = data.info.origin.position.y - 0.2
         self.params['map_res'] = data.info.resolution
         self.params['map_data'] = data.data
         self.params['map_width'] = data.info.width
