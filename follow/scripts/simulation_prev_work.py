@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--sim', type=bool, default= True)
     parser.add_argument('--expansion_time', type=int, default= 0.15)
     parser.add_argument('--gamma', type=float, default= 0.90)
-    parser.add_argument('--human_vel', type=int, default= 1.)
+    parser.add_argument('--human_vel', type=int, default= 0.7)
     parser.add_argument('--dt', type=int, default= 0.2)
     parser.add_argument('--human_history_len', type=int, default= 5)
     parser.add_argument('--human_prob_model_dir', type=str, default= "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth")
@@ -34,14 +34,14 @@ class Tree(object):
     def __init__(self, params):
         #parameters
         self.params = params 
-        # self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
-        self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
+        self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
+        # self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
         # self.human_prob = prob_dist(self.params['human_prob_model_dir'])
 
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
-        self.params['robot_vel'] = 1.0
-        self.params['robot_vel_fast_lamda'] = 2.0
+        self.params['robot_vel'] = 0.7
+        self.params['robot_vel_fast_lamda'] = 2.
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}        
@@ -54,36 +54,60 @@ class Tree(object):
 
     def run(self):
         self.plot_idx = 0
-        for traj in self.human_traj:
-            sum_reward = 0.
-            traj_state = []
-            robot_pose = np.array(traj[self.params['human_history_len']-1]) + [1.3,0.,0.]
-            for i in range(len(traj)- self.params['human_history_len']):
-                # get the human prob destribution
-                history_seq = np.array(traj[i:i+self.params['human_history_len']])
-                human_future = self.extrapolate(history_seq)
+        robot_init_pose_list = [[1.3,0.,0.], [1.3, 0.5, 0], [1.3, 1., 0], [1.,1, 0.], [1.3, 0.5, 0.4], [1., 0.5, 0.5]]
+        if os.path.exists('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt'):
+            os.remove('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt')
+            
+        for robot_init in robot_init_pose_list:
+            for traj in self.human_traj:
+                traj = traj[10:]
+                sum_reward = 0.
+                dist_list = []
+                angle_list = []
+                traj_state = []
+                robot_pose = np.array(traj[self.params['human_history_len']-1]) + robot_init
+                for i in range(len(traj)- self.params['human_history_len']):
+                    history_seq = np.array(traj[i:i+self.params['human_history_len']])
+                    human_future = self.extrapolate(history_seq)
 
-                # expand the tree
-                if i==29:
-                    print('here')
-                state = np.array([robot_pose, history_seq[-1]])
-                nav_state = navState(params = self.params, state=state, next_to_move= 0)
-                node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
-                mcts = MCTS(node_human, human_future)
-                best_leaf_node = mcts.tree_expantion(time.time() + self.params['expansion_time'])
+                    state = np.array([robot_pose, history_seq[-1]])
+                    nav_state = navState(params = self.params, state=state, next_to_move= 0)
+                    node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
+                    mcts = MCTS(node_human, human_future)
+                    best_leaf_node = mcts.tree_expantion(time.time() + self.params['expansion_time'])
 
-                robot_pose = self.move_robot(state, best_leaf_node)
-                traj_state.append(state)
+                    robot_pose = self.move_robot(state, best_leaf_node.action)
+                    traj_state.append(state)
 
-                ###
-                reward = nav_state.calculate_reward(state)
-                sum_reward += reward
+                    ###
+                    reward = nav_state.calculate_reward(state)
+                    sum_reward += reward
+                    dist, angle = self.compute_mean_dist_angle(state)
+                    dist_list.append(dist)
+                    angle_list.append(angle)
 
-            self.plot_state(traj_state)
-            print('sum_reward:', sum_reward)
-
+                self.plot_state(traj_state)
+                print('sum_reward:', sum_reward)
+                print('mean_dist:', np.mean(dist_list), "std_dist:", np.std(dist_list))
+                print('mean_angle:', np.mean(angle_list), "std_angle:", np.std(angle_list))
+                with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt', 'a') as file:
+                    file.write(f'robot_init_pose: {robot_init}\n')
+                    file.write(f'sum_reward: {sum_reward}\n')
+                    file.write(f'mean_dist: {np.mean(dist_list)}\n')
+                    file.write(f'std_dist: {np.std(dist_list)}\n')
+                    file.write(f'mean_angle: {np.mean(angle_list)}\n')
+                    file.write(f'std_angle: {np.std(angle_list)}\n')
+                    file.write('\n')
         return
 
+    def compute_mean_dist_angle(self, state):
+        robot_pose = state[0]
+        human_pose = state[1]
+        dist = np.linalg.norm(robot_pose[:2] - human_pose[:2])
+        angle = np.arctan2(robot_pose[1] - human_pose[1], robot_pose[0] - human_pose[0]) - human_pose[2]
+        # print('dist:', dist, 'angle:', angle)
+        return dist, angle
+    
     def extrapolate(self, history_seq):
         t = np.arange(len(history_seq)) #.reshape(-1, 1)
         x = np.array(history_seq)[:, 0]

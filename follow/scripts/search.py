@@ -18,9 +18,9 @@ class MCTS:
         tree_id = 0
         expansion_count = 0
 
-        while time.time() < T:
-            expansion_count += 1
-        # for _ in range(50):
+        # while time.time() < T:
+        #     expansion_count += 1
+        for _ in range(100):
             ### Node selection 
             curr_node = self.root
             while(curr_node.number_of_visits > 1):
