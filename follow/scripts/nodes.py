@@ -69,35 +69,23 @@ class MCTSNode(object):
         if self.params['sim']:
             return False
         
-        x = int(np.rint((sp[0] - self.params['map_origin_x']) / self.params['map_res']))
-        y = int(np.rint((sp[1] - self.params['map_origin_y']) / self.params['map_res']))
+        dx = sp[0]-s[0]
+        dy = sp[1]-s[1]
+
+        dx *= 7
+        dy *= 7
+
+        new_x = s[0] + dx
+        new_y = s[1] + dy
+        x = int(np.rint((new_x - self.params['map_origin_x']) / self.params['map_res']))
+        y = int(np.rint((new_y - self.params['map_origin_y']) / self.params['map_res']))
 
         cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
 
         if cost > 90:
             return True
 
-        # check for occlusion
 
-        # x1_ind = int(np.rint((s[0] - self.params['map_info']['origin_x']) / self.params['map_info']['res']))
-        # y1_ind = int(np.rint((s[1] - self.params['map_info']['origin_y']) / self.params['map_info']['res']))
-        # x2_ind = int(np.rint((sp[0] - self.params['map_info']['origin_x']) / self.params['map_info']['res']))
-        # y2_ind = int(np.rint((sp[1] - self.params['map_info']['origin_y']) / self.params['map_info']['res']))
-
-        # if x2_ind == x1_ind and y2_ind == y1_ind: return False
-
-        # slope = (y2_ind-y1_ind)/(x2_ind-x1_ind+0.00000001)
-        # obstacle_count =0
-        # s_list_step = np.sign(int((x2_ind-x1_ind)))
-        # if s_list_step ==0: s_list_step = 1 
-        # x_list = range(x1_ind, x2_ind+1, s_list_step)
-        # for x in x_list:
-        #     y0 = int(slope*(x-x1_ind) + y1_ind)
-        #     for y in range(y0 -2, y0 +3):   
-        #         if self.params['map_info']['data'][int(x + self.params['map_info']['width'] * y)] == 100: 
-        #             obstacle_count += 1
-
-        # return True if obstacle_count > 2 else False
 
 
     def backpropagate(self):
