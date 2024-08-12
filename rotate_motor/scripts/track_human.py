@@ -64,11 +64,46 @@ class human_traj_prediction():
         self.pid_angle_limit = 8  # Limit the angle change to avoid sudden movements
         
         self.use_pid = True  # Flag to switch between original and PID methods
+        self.use_pwm = False
+
+        # PWM parameters
+        self.max_duty_cycle = 100  # Maximum duty cycle percentage
+        self.min_duty_cycle = 10   # Minimum duty cycle percentage
+        self.angular_error_threshold = 1.0  # Threshold to start moving (degrees)
 
         #For testing
         self.human_global_pos = []
 
         print('Initialization complete')
+    
+    def original_angle_calculation(self, mean_bb, center_threshold_min, center_threshold_max):
+        # Original method to calculate the angle
+        angle_limit = 15
+        error = center_threshold_min - mean_bb
+        angular_error = error * self.deg_per_pixel
+        
+        if angular_error > 0:
+            turn = min(angle_limit,angular_error)
+            self.goal += turn
+            print("rotating ", turn , " deg")
+            self.send_goal()
+
+        elif angular_error < 0:
+            turn = min(angle_limit, -angular_error)
+            self.goal -= turn
+            print("rotating -", turn , " deg")
+            self.send_goal()
+    
+    def pid_angle_calculation(self, mean_bb, image_center):
+        error = image_center - mean_bb
+        angular_error = error * self.deg_per_pixel  # Convert pixel error to angular error
+        turn = self.pid_controller(angular_error)
+        turn = max(min(turn, self.pid_angle_limit), -self.pid_angle_limit)  # Limit turn value
+
+        self.goal += turn
+        print("rotating ", turn , " deg")
+        
+        self.send_goal()
 
     def pid_controller(self, error):
         # PID error calculations
@@ -79,31 +114,26 @@ class human_traj_prediction():
         # PID control signal
         control_signal = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
         return control_signal
-    
-    def original_angle_calculation(self, mean_bb, center_threshold_min, center_threshold_max):
-        # Original method to calculate the angle
-        angle = 15
-        if mean_bb < center_threshold_min:
-            turn = min(angle, center_threshold_min - mean_bb)
-            self.goal += turn
-            print("rotating ", turn , " deg")
-            self.send_goal()
 
-        elif mean_bb > center_threshold_max:
-            turn = min(angle, mean_bb - center_threshold_max)
-            self.goal -= turn
-            print("rotating -", turn , " deg")
-            self.send_goal()
+    def pwm_angle_calculation(self, mean_bb, image_center):
+        error = image_center - mean_bb  # pixel error
+        angular_error = error * self.deg_per_pixel
 
-    def pid_angle_calculation(self, mean_bb, image_center):
-        error = image_center - mean_bb
-        angular_error = error * self.deg_per_pixel  # Convert pixel error to angular error
-        turn = self.pid_controller(angular_error)
-        turn = max(min(turn, self.pid_angle_limit), -self.pid_angle_limit)  # Limit turn value
+        if abs(angular_error) > self.angular_error_threshold:
+            self.pwm_controller(angular_error)
 
-        self.goal += turn
-        print("rotating ", turn , " deg")
+    def pwm_controller(self, angular_error):
+        duty_cycle = self.min_duty_cycle + (self.max_duty_cycle - self.min_duty_cycle) * (abs(angular_error) / self.horizontal_fov)
+        duty_cycle = max(min(duty_cycle, self.max_duty_cycle), self.min_duty_cycle)
         
+        # Determine direction based on the sign of the angular error
+        if angular_error > 0:
+            self.goal += duty_cycle * (angular_error / abs(angular_error))  # Positive direction
+            print(f"rotating {duty_cycle}% duty cycle to the right")
+        else:
+            self.goal -= duty_cycle * (angular_error / abs(angular_error))  # Negative direction
+            print(f"rotating {duty_cycle}% duty cycle to the left")
+
         self.send_goal()
 
     def send_goal(self):
@@ -214,9 +244,11 @@ class human_traj_prediction():
 
                 if self.use_pid:
                     self.pid_angle_calculation(mean_bb, image_center)
+                elif self.use_pwm:
+                    self.pwm_angle_calculation(mean_bb, image_center)
                 else:
                     self.original_angle_calculation(mean_bb, center_threshold_min, center_threshold_max)
-
+                
                 # if mean_bb < center_threshold_min:
                 #     turn = min(10, center_threshold_min - mean_bb)
                 #     self.goal += turn
