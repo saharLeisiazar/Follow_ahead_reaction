@@ -54,12 +54,13 @@ class human_traj_prediction():
         
         # Initialize PID parameters
         self.Kp = 0.5  
-        self.Ki = 0.0  # Integral gain (start with 0 and tune)
-        self.Kd = 0.1  # Derivative gain (start with 0 and tune)
+        self.Ki = 0.2  # Integral gain (start with 0 and tune)
+        self.Kd = 0.01  # Derivative gain (start with 0 and tune)
         self.previous_error = 0.0
         self.integral = 0.0
+        self.pid_angle_limit = 8  # Limit the angle change to avoid sudden movements
         
-        self.use_pid = False  # Flag to switch between original and PID methods
+        self.use_pid = True  # Flag to switch between original and PID methods
 
         #For testing
         self.human_global_pos = []
@@ -78,14 +79,15 @@ class human_traj_prediction():
     
     def original_angle_calculation(self, mean_bb, center_threshold_min, center_threshold_max):
         # Original method to calculate the angle
+        angle = 15
         if mean_bb < center_threshold_min:
-            turn = min(10, center_threshold_min - mean_bb)
+            turn = min(angle, center_threshold_min - mean_bb)
             self.goal += turn
             print("rotating ", turn , " deg")
             self.send_goal()
 
         elif mean_bb > center_threshold_max:
-            turn = min(10, mean_bb - center_threshold_max)
+            turn = min(angle, mean_bb - center_threshold_max)
             self.goal -= turn
             print("rotating -", turn , " deg")
             self.send_goal()
@@ -93,7 +95,7 @@ class human_traj_prediction():
     def pid_angle_calculation(self, mean_bb, image_center):
         error = image_center - mean_bb
         turn = self.pid_controller(error)
-        turn = max(min(turn, 10), -10)  # Limit turn value
+        turn = max(min(turn, self.pid_angle_limit), -self.pid_angle_limit)  # Limit turn value
 
         self.goal += turn
         print("rotating ", turn , " deg")
