@@ -116,7 +116,7 @@ class human_traj_prediction():
         self.human_x.append(coords[0])
         self.human_y.append(coords[1])
 
-        if len(self.human_x > 10):
+        if len(self.human_x) > 10:
             self.human_x.pop(0)
             self.human_y.pop(0)
 
@@ -151,7 +151,7 @@ class human_traj_prediction():
 
 
         ###### person is detected
-        if len(feat) and self.count % 3 == 0:
+        if len(feat) and self.count%3 == 0 :
                 # print("Person detected at x: ", feat['x'])
             ###### To keep the human in the middle of the image
 
@@ -165,22 +165,22 @@ class human_traj_prediction():
                 center_threshold_min = image_center * (1 - center_range_percentage)  # 1280 * (1-0.15)/2 = 576 
                 center_threshold_max = image_center * (1 + center_range_percentage)  # 1280 * (1+0.15)/2 = 704
 
-
+                angle = 15
                 if mean_bb < center_threshold_min:
-                    turn = min(10, center_threshold_min - mean_bb)
+                    turn = min(angle, center_threshold_min - mean_bb)
                     self.goal += turn
                     print("rotating ", turn , " deg")
                     self.send_goal()   
 
                 elif mean_bb > center_threshold_max:
-                    turn = min(10, mean_bb - center_threshold_max)
+                    turn = min(angle, mean_bb - center_threshold_max)
                     self.goal -= turn
                     print("rotating -", turn , " deg")
                     self.send_goal() 
 
 
                 # transform the human position to global coordinates
-                human_position_global = self.transform_to_global(feat['position'])
+                # human_position_global = self.transform_to_global(feat['position'])
                 # print("Human position in global coordinates: ", human_position_global)
 
                 # for testing: store human pos for plotting and testing
@@ -189,13 +189,13 @@ class human_traj_prediction():
                 # self.save_positions()
 
                 # Publish the current human position
-                point = PointStamped()
-                point.header.stamp = rospy.Time.now()
-                point.header.frame_id = 'map'
-                point.point.x = human_position_global[0]
-                point.point.y = human_position_global[1]
-                point.point.z = human_position_global[2]
-                self.pub_glob_coords.publish(point)
+                #point = PointStamped()
+                #point.header.stamp = rospy.Time.now()
+                #point.header.frame_id = 'map'
+                #point.point.x = human_position_global[0]
+                #point.point.y = human_position_global[1]
+                #point.point.z = human_position_global[2]
+                #self.pub_glob_coords.publish(point)
 
     #For testing
     def save_positions (self):
