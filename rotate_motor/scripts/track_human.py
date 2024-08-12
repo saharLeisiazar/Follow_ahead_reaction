@@ -49,6 +49,9 @@ class human_traj_prediction():
         self.robot_position = [0,0,0]
         self.human_x = []
         self.human_y = []
+        self.camera_fov = 110  # Camera field of view in degrees
+        self.image_width = 1280
+        self.deg_per_pixel = self.horizontal_fov / self.image_width  # Degrees per pixel
         # self.robot_orientation = np.eye(3)
         # self.motor_rotation_angle = 0.0
         
@@ -94,7 +97,8 @@ class human_traj_prediction():
 
     def pid_angle_calculation(self, mean_bb, image_center):
         error = image_center - mean_bb
-        turn = self.pid_controller(error)
+        angular_error = error * self.deg_per_pixel  # Convert pixel error to angular error
+        turn = self.pid_controller(angular_error)
         turn = max(min(turn, self.pid_angle_limit), -self.pid_angle_limit)  # Limit turn value
 
         self.goal += turn
