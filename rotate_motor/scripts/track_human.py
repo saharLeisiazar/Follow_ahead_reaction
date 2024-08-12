@@ -12,6 +12,7 @@ from dynamixel_workbench_msgs.srv import *
 from rospy_tutorials.srv import *
 import sys
 from scipy.spatial.transform import Rotation
+from std_msgs.msg import Float64
 # sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/rotate_motor/scripts/')
 # from camera_dimensions import get_camera_dimensions
 
@@ -51,11 +52,53 @@ class human_traj_prediction():
         # self.robot_orientation = np.eye(3)
         # self.motor_rotation_angle = 0.0
         
+        # Initialize PID parameters
+        self.Kp = 0.5  
+        self.Ki = 0.0  # Integral gain (start with 0 and tune)
+        self.Kd = 0.1  # Derivative gain (start with 0 and tune)
+        self.previous_error = 0.0
+        self.integral = 0.0
+        
+        self.use_pid = False  # Flag to switch between original and PID methods
+
         #For testing
         self.human_global_pos = []
 
         print('Initialization complete')
 
+    def pid_controller(self, error):
+        # PID error calculations
+        self.integral += error
+        derivative = error - self.previous_error
+        self.previous_error = error
+
+        # PID control signal
+        control_signal = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
+        return control_signal
+    
+    def original_angle_calculation(self, mean_bb, center_threshold_min, center_threshold_max):
+        # Original method to calculate the angle
+        if mean_bb < center_threshold_min:
+            turn = min(10, center_threshold_min - mean_bb)
+            self.goal += turn
+            print("rotating ", turn , " deg")
+            self.send_goal()
+
+        elif mean_bb > center_threshold_max:
+            turn = min(10, mean_bb - center_threshold_max)
+            self.goal -= turn
+            print("rotating -", turn , " deg")
+            self.send_goal()
+
+    def pid_angle_calculation(self, mean_bb, image_center):
+        error = image_center - mean_bb
+        turn = self.pid_controller(error)
+        turn = max(min(turn, 10), -10)  # Limit turn value
+
+        self.goal += turn
+        print("rotating ", turn , " deg")
+        
+        self.send_goal()
 
     def send_goal(self):
 
@@ -156,8 +199,6 @@ class human_traj_prediction():
             ###### To keep the human in the middle of the image
 
                 mean_bb = (feat['bb_x_min'] + feat['bb_x_max']) /2
-                # print("mean_bb: ", mean_bb)
-                # turn = 10
                 
                 # Define center threshold based on a narrower range
                 center_range_percentage = 0.15  # % on either side of the center
@@ -165,19 +206,22 @@ class human_traj_prediction():
                 center_threshold_min = image_center * (1 - center_range_percentage)  # 1280 * (1-0.15)/2 = 576 
                 center_threshold_max = image_center * (1 + center_range_percentage)  # 1280 * (1+0.15)/2 = 704
 
-                angle = 15
-                if mean_bb < center_threshold_min:
-                    turn = min(angle, center_threshold_min - mean_bb)
-                    self.goal += turn
-                    print("rotating ", turn , " deg")
-                    self.send_goal()   
+                if self.use_pid:
+                    self.pid_angle_calculation(mean_bb, image_center)
+                else:
+                    self.original_angle_calculation(mean_bb, center_threshold_min, center_threshold_max)
 
-                elif mean_bb > center_threshold_max:
-                    turn = min(angle, mean_bb - center_threshold_max)
-                    self.goal -= turn
-                    print("rotating -", turn , " deg")
-                    self.send_goal() 
+                # if mean_bb < center_threshold_min:
+                #     turn = min(10, center_threshold_min - mean_bb)
+                #     self.goal += turn
+                #     print("rotating ", turn , " deg")
+                #     self.send_goal()   
 
+                # elif mean_bb > center_threshold_max:
+                #     turn = min(10, mean_bb - center_threshold_max)
+                #     self.goal -= turn
+                #     print("rotating -", turn , " deg")
+                #     self.send_goal() 
 
                 # transform the human position to global coordinates
                 # human_position_global = self.transform_to_global(feat['position'])
