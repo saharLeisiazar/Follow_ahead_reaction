@@ -51,7 +51,7 @@ class human_traj_prediction():
         self.human_y = []
         self.camera_fov = 110  # Camera field of view in degrees
         self.image_width = 1280
-        self.deg_per_pixel = self.horizontal_fov / self.image_width  # Degrees per pixel
+        self.deg_per_pixel = self.camera_fov / self.image_width  # Degrees per pixel
         # self.robot_orientation = np.eye(3)
         # self.motor_rotation_angle = 0.0
         
@@ -69,7 +69,6 @@ class human_traj_prediction():
         # PWM parameters
         self.max_duty_cycle = 100  # Maximum duty cycle percentage
         self.min_duty_cycle = 10   # Minimum duty cycle percentage
-        self.angular_error_threshold = 1.0  # Threshold to start moving (degrees)
 
         #For testing
         self.human_global_pos = []
@@ -124,7 +123,7 @@ class human_traj_prediction():
     def pwm_controller(self, angular_error):
         duty_cycle = self.min_duty_cycle + (self.max_duty_cycle - self.min_duty_cycle) * (abs(angular_error) / self.camera_fov)
         duty_cycle = max(min(duty_cycle, self.max_duty_cycle), self.min_duty_cycle)
-        angular_step = duty_cycle * (self.camera_fov / 100.0)
+        angular_step = angular_error * (duty_cycle / 100.0)
         # Determine direction based on the sign of the angular error
         if angular_error > 0:
             self.goal += angular_step
