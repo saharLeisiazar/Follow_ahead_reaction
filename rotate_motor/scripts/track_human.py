@@ -118,21 +118,20 @@ class human_traj_prediction():
     def pwm_angle_calculation(self, mean_bb, image_center):
         error = image_center - mean_bb  # pixel error
         angular_error = error * self.deg_per_pixel
-
-        if abs(angular_error) > self.angular_error_threshold:
-            self.pwm_controller(angular_error)
+        
+        self.pwm_controller(angular_error)
 
     def pwm_controller(self, angular_error):
-        duty_cycle = self.min_duty_cycle + (self.max_duty_cycle - self.min_duty_cycle) * (abs(angular_error) / self.horizontal_fov)
+        duty_cycle = self.min_duty_cycle + (self.max_duty_cycle - self.min_duty_cycle) * (abs(angular_error) / self.camera_fov)
         duty_cycle = max(min(duty_cycle, self.max_duty_cycle), self.min_duty_cycle)
-        
+        angular_step = duty_cycle * (self.camera_fov / 100.0)
         # Determine direction based on the sign of the angular error
         if angular_error > 0:
-            self.goal += duty_cycle * (angular_error / abs(angular_error))  # Positive direction
-            print(f"rotating {duty_cycle}% duty cycle to the right")
+            self.goal += angular_step
+            print(f"rotating right by {angular_step} degrees with {duty_cycle}% duty cycle")
         else:
-            self.goal -= duty_cycle * (angular_error / abs(angular_error))  # Negative direction
-            print(f"rotating {duty_cycle}% duty cycle to the left")
+            self.goal -= angular_step 
+            print(f"rotating left by {angular_step} degrees with {duty_cycle}% duty cycle")
 
         self.send_goal()
 
