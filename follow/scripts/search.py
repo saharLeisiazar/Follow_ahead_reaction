@@ -64,7 +64,10 @@ class MCTS:
         else:
             prob = 1.      
 
-        UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))  * prob
+        # UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))
+        # UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))* prob
+        # UCB = (c.value/c.n)* prob + c_param * np.sqrt((np.log(c.parent.n) / c.n))
+        UCB = ((c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n)))* prob
         return UCB
 
 
