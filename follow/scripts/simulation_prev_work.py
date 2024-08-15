@@ -36,7 +36,6 @@ class Tree(object):
         self.params = params 
         # self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
         self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
-        # self.human_prob = prob_dist(self.params['human_prob_model_dir'])
 
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()

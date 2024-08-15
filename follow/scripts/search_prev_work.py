@@ -20,8 +20,8 @@ class MCTS:
         # self.leaf_nodes.append(self.root)
         self.leaf_nodes = np.append(self.leaf_nodes, self.root)
 
-        # while time.time() < T:
-        for _ in range(100):
+        while time.time() < T:
+        # for _ in range(100):
             ### Node selection 
             curr_node = self.root
             
