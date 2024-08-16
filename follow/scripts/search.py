@@ -65,6 +65,7 @@ class MCTS:
             prob = 1.      
 
         UCB = ((c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n)) ) * prob
+
         return UCB
 
 
