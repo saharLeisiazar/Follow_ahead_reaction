@@ -8,9 +8,9 @@ std_angle = np.array([])
 
 sum_reward = np.array([])
 
-traj_length = 35
+traj_length = 15
 
-with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/sudden_prev_turn.txt', 'r') as file:
+with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/12_3.txt', 'r') as file:
     lines = file.readlines()
     for line in lines:
         if line == '\n':

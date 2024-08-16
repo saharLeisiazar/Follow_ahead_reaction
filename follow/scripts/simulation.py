@@ -1,5 +1,6 @@
 from sim_human_traj_generate import human_traj_generator as human_smooth_traj
 from sim_human_traj_generate_sudden_move import human_traj_generator as human_sudden_traj
+from sim_human_traj_generate_turn import human_traj_generator as human_turn_traj
 from human_prob_dist import prob_dist, LSTMModel2D
 from nodes import MCTSNode
 from search import MCTS
@@ -34,7 +35,8 @@ class Tree(object):
         #parameters
         self.params = params 
         # self.human_traj = human_smooth_traj(self.params['human_vel'], self.params['dt'])
-        self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
+        # self.human_traj = human_sudden_traj(self.params['human_vel'], self.params['dt'])
+        self.human_traj = human_turn_traj(self.params['human_vel'], self.params['dt'])
         self.human_prob = prob_dist(self.params['human_prob_model_dir'])
 
         self.params['human_acts'] = self.define_human_actions()
@@ -53,7 +55,8 @@ class Tree(object):
 
     def run(self):
         self.plot_idx = 0
-        robot_init_pose_list = [[1.3,0.,0.], [1.3, 0.5, 0], [1.3, -1., 0], [1.,1, 0.], [1.3, -0.5, 0.4], [1., -0.5, 0.5]]
+        # robot_init_pose_list = [[1.3,0.,0.], [1., 0.5, 0], [1., -0.5, 0], [1.,0.5, 0.5], [1., 0.5, -0.5], [1.,-0.5, 0.5], [1., -0.5, -0.5]]
+        robot_init_pose_list = [[1.3, 0., 0]]
         if os.path.exists('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt'):
             os.remove('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt')
             

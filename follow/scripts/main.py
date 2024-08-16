@@ -1,26 +1,15 @@
-#!/usr/bin/env python3
-# import sys
-# sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts')
-
 from human_prob_dist import prob_dist, LSTMModel2D
 from RL_interface import RL_model
-
 import numpy as np
-import torch
 import time
-
 from nodes import MCTSNode
 from search import MCTS
 from navi_state import navState
-
-# import message_filters
 import rospy
 from geometry_msgs.msg import TransformStamped
 from scipy.spatial.transform import Rotation as R
-
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import OccupancyGrid
-# import time
 from visualization_msgs.msg import Marker
 
 
@@ -42,7 +31,6 @@ class node():
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['expansion_time'] = 0.15
         self.params['sim'] = False
-        # self.params['num_expansion'] = 60
         self.stay_bool = True
         self.time = time.time()
         self.freq = 5 #(Hz)
