@@ -37,7 +37,7 @@ class node():
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}
-        self.params['reaction_zone_params'] = {"r":0.7, "a":0.3}
+        self.params['reaction_zone_params'] = {"r":0.8, "a":0.3}
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['expansion_time'] = 0.15
