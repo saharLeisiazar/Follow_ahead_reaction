@@ -55,13 +55,14 @@ class Tree(object):
 
     def run(self):
         self.plot_idx = 0
-        # robot_init_pose_list = [[1.3,0.,0.], [1., 0.5, 0], [1., -0.5, 0], [1.,0.5, 0.5], [1., 0.5, -0.5], [1.,-0.5, 0.5], [1., -0.5, -0.5]]
-        robot_init_pose_list = [[1.3, 0., 0]]
+        robot_init_pose_list = [[1.3,0.,0.], [1., 0.5, 0], [1., -0.5, 0], [1.,0.5, 0.5], [1., 0.5, -0.5], [1.,-0.5, 0.5], [1., -0.5, -0.5]]
+        # robot_init_pose_list = [[1.3, 0., 0]]
         if os.path.exists('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt'):
             os.remove('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/summary.txt')
             
-        for robot_init in robot_init_pose_list:
-            for traj in self.human_traj:
+            
+        for traj in self.human_traj:
+            for robot_init in robot_init_pose_list:
                 sum_reward = 0.
                 dist_list = []
                 angle_list = []
