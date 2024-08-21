@@ -9,6 +9,7 @@ from zed_interfaces.msg import ObjectsStamped
 from geometry_msgs.msg import PoseStamped , PoseArray, PointStamped
 from nav_msgs.msg import Odometry
 from dynamixel_workbench_msgs.srv import *
+from dynamixel_workbench_msgs.msg import DynamixelStateList
 from rospy_tutorials.srv import *
 import sys
 from scipy.spatial.transform import Rotation
@@ -31,6 +32,7 @@ class human_traj_prediction():
         print('Subscriber setup for /zed2/zed_node/obj_det/objects')
 
         rospy.Subscriber('odom', Odometry, self.robot_position_callback)
+        rospy.Subscriber('/dynamixel_workbench/dynamixel_state', DynamixelStateList, self.state_callback)
 
         self.pub_cur_pose = rospy.Publisher('/person_pose', PoseStamped, queue_size = 1)
         print('Publisher setup for /person_pose')
@@ -52,8 +54,8 @@ class human_traj_prediction():
         self.camera_fov = 110  # Camera field of view in degrees
         self.image_width = 1280
         self.deg_per_pixel = self.camera_fov / self.image_width  # Degrees per pixel
-        # self.robot_orientation = np.eye(3)
-        # self.motor_rotation_angle = 0.0
+        self.robot_orientation = 0
+        self.current_position = None # current position of the motor
         
         # Initialize PID parameters
         self.Kp = 0.5  
@@ -144,10 +146,27 @@ class human_traj_prediction():
             req = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
             goal_res = int(self.goal* self.deg_to_res)
             print('goal value', goal_res)
-            resp1 = req('', 1, 'Goal_Position', goal_res) #update motor rotation angle
+            resp1 = req('',1, 'Goal_Position', goal_res)
             self.motor_rotation_angle = self.goal * (math.pi/180)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
+    
+    # To get the present position of the motor 
+
+    def state_callback(self, data):
+        for state in data.dynamixel_state:
+            if state.id == 1:  # Replace with your motor ID
+                self.current_position = state.present_position
+                break
+
+    def get_motor_position(self):
+        if self.current_position is not None:
+            self.current_position = (self.current_position / 10) 
+            print("Current motor position:", self.current_position)
+            return self.current_position
+        else:
+            print("Motor position not available.")
+            return None
 
     def human_data(self, data):
         feat = {}
@@ -173,21 +192,24 @@ class human_traj_prediction():
 
         q = data.pose.pose.orientation
         rot = Rotation.from_quat([q.x, q.y, q.z, q.w])
-        rot_euler = rot.as_euler('xyz', degrees=False)
+        rot_euler = rot.as_euler('xyz', degrees=True)
         self.robot_orientation = rot_euler[2]
 
     def transform_to_global(self, local_coords):
         local_coords = np.array(local_coords)
-        angle = np.deg2rad(self.goal)
-        motor_rotation_matrix = np.array([[np.cos(angle), -np.sin(angle), 0],
-                                           [np.sin(angle), np.cos(angle), 0],
+        motor_angle = np.deg2rad(self.get_motor_position())
+        print("Motor angle: ", motor_angle)
+        robot_angle = np.deg2rad(self.robot_orientation)
+        print("Robot angle: ", robot_angle)
+        combined_angle = motor_angle + robot_angle
+        motor_rotation_matrix = np.array([[np.cos(combined_angle), -np.sin(combined_angle), 0],
+                                           [np.sin(combined_angle), np.cos(combined_angle), 0],
                                            [0, 0, 1]])
         global_coords = np.dot(motor_rotation_matrix, local_coords) + self.robot_position
 
         global_coords = global_coords[:2]
         global_ori = self.get_global_ori(global_coords)
         return np.append(global_coords, global_ori)
-
 
     def get_global_ori(self, coords):
         self.human_x.append(coords[0])
@@ -231,7 +253,6 @@ class human_traj_prediction():
         if len(feat) and self.count%3 == 0 :
                 # print("Person detected at x: ", feat['x'])
             ###### To keep the human in the middle of the image
-
                 mean_bb = (feat['bb_x_min'] + feat['bb_x_max']) /2
                 
                 # Define center threshold based on a narrower range
@@ -247,35 +268,23 @@ class human_traj_prediction():
                 else:
                     self.original_angle_calculation(mean_bb, center_threshold_min, center_threshold_max)
                 
-                # if mean_bb < center_threshold_min:
-                #     turn = min(10, center_threshold_min - mean_bb)
-                #     self.goal += turn
-                #     print("rotating ", turn , " deg")
-                #     self.send_goal()   
-
-                # elif mean_bb > center_threshold_max:
-                #     turn = min(10, mean_bb - center_threshold_max)
-                #     self.goal -= turn
-                #     print("rotating -", turn , " deg")
-                #     self.send_goal() 
-
                 # transform the human position to global coordinates
-                # human_position_global = self.transform_to_global(feat['position'])
+                human_position_global = self.transform_to_global(feat['position'])
                 # print("Human position in global coordinates: ", human_position_global)
 
                 # for testing: store human pos for plotting and testing
-                # self.human_global_pos.append(human_position_global.tolist())
+                self.human_global_pos.append(human_position_global.tolist())
                 # # print("current global position shage: ", np.array(self.human_global_pos).shape)
-                # self.save_positions()
+                self.save_positions()
 
                 # Publish the current human position
-                #point = PointStamped()
-                #point.header.stamp = rospy.Time.now()
-                #point.header.frame_id = 'map'
-                #point.point.x = human_position_global[0]
-                #point.point.y = human_position_global[1]
-                #point.point.z = human_position_global[2]
-                #self.pub_glob_coords.publish(point)
+                point = PointStamped()
+                point.header.stamp = rospy.Time.now()
+                point.header.frame_id = 'map'
+                point.point.x = human_position_global[0]
+                point.point.y = human_position_global[1]
+                point.point.z = human_position_global[2]
+                self.pub_glob_coords.publish(point)
 
     #For testing
     def save_positions (self):
@@ -287,19 +296,21 @@ class human_traj_prediction():
         # global_positions = np.array(self.human_global_pos)
         if os.path.exists(save_file):
             global_positions = np.load(save_file)
-        print(f"Global position shape: {global_positions.shape}")
-        x_coords = global_positions[:,0]
-        y_coords = global_positions[:,1]
-        z_coords = global_positions[:,2]
+            print(f"Global position shape: {global_positions.shape}")
+            x_coords = global_positions[:,0]
+            y_coords = global_positions[:,1]
+            z_coords = global_positions[:,2]
 
-        plt.figure()
-        plt.plot(x_coords, y_coords, 'o-', label='Human Trajectory')
-        plt.title("Human Position in Global Coordinates")
-        plt.xlim(-6,6)
-        plt.ylim(-6,6)
-        plt.legend()
-        plt.grid()
-        plt.show()
+            plt.figure()
+            plt.plot(x_coords, y_coords, 'o-', label='Human Trajectory')
+            plt.title("Human Position in Global Coordinates")
+            plt.xlim(-6,6)
+            plt.ylim(-6,6)
+            plt.legend()
+            plt.grid()
+            plt.show()
+        else:
+            print("No data found to plot")
 
 
 if __name__ == '__main__':
@@ -307,4 +318,5 @@ if __name__ == '__main__':
     human_traj_prediction()
     rospy.spin()   
 
+    # For testing: plot human position
     # human_traj_prediction().plot_human_positions() 
