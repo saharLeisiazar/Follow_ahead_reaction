@@ -122,3 +122,72 @@ After correctly connecting all the sensors, please run the track_human.py file f
 ```
 After correctly connecting all the sensors and the robot, please run the track_human.py file from VScode directly, the rosrun would run another file.
 ```
+
+# Implementing PID and PWM conroller to improve performance of sensor
+# (August 6 - August 15, Week 12)
+
+Developed and integrated both a Proportional-Integral-Derivative (PID) controller and a Pulse Width Modulation (PWM) controller to manage the angle adjustment of a camera in response to human target detection. The goal was to keep the human target centered in the camera’s field of view, even as they move around.
+
+
+## Overview
+
+The code is designed to dynamically adjust the camera's orientation based on the position of a detected human target. It provides two primary methods for controlling the camera's angle:
+
+- **PID Controller**: The PID controller continuously adjusts the camera angle by minimizing the error between the target’s position in the frame and the center of the frame. It balances responsiveness and stability by combining proportional, integral, and derivative components. The PID controller is particularly effective for smooth, precise adjustments.
+  - **Key Code References**:
+    - PID Calculation: `pid_controller(self, error)`
+    - Angle Adjustment: `pid_angle_calculation(self, mean_bb, image_center)`
+
+- **PWM Controller**: The PWM controller adjusts the camera’s angle by varying the duty cycle based on the angular error. Larger errors result in a higher duty cycle, leading to faster corrections. A deadband and gradual duty cycle adjustments help reduce oscillations, making the PWM controller suitable for responsive but controlled movements.
+  - **Key Code References**:
+    - PWM Duty Cycle Calculation: `pwm_controller(self, angular_error)`
+    - Angle Adjustment: `pwm_angle_calculation(self, mean_bb, image_center)`
+
+## Usage Instructions
+
+### Switching Between Controllers
+
+You can easily switch between the PID controller, PWM controller, and the original angle adjustment method by setting the following flags in the `__init__` method:
+
+- **Enable PID Controller**:
+  ```python
+  self.use_pid = True
+  self.use_pwm = False  
+
+- **Enable PWM Controller**:
+  ```python
+  self.use_pid = False
+  self.use_pwm = True  
+
+- **Enable Original method**:
+  ```python
+  self.use_pid = False
+  self.use_pwm = False  
+
+# Continued on Global Position Conversion Adjustments
+# (August 16 - August 23, Week 14)
+
+### Overview
+
+I refined the conversion of the detected human position from local (camera-relative) coordinates to global coordinates. The original implementation did not correctly account for the robot's orientation and the absolute position of the motor, leading to inaccuracies in the global position coordinates. My updates ensure that these factors are properly integrated into the calculation, resulting in more accurate global positioning.
+
+### Enhancements
+
+The following improvements were made to the global position conversion process:
+
+- **Incorporation of Robot Orientation**: The robot's current orientation is now factored into the conversion process. This ensures that the global coordinates reflect the true position of the human relative to the robot's heading.
+- **Motor Position Integration**: The absolute position of the motor is also included in the calculations. This adjustment accounts for the camera's rotation and correctly maps the detected position to the global frame of reference.
+
+### Key Code References
+
+- **Global Position Calculation**: The core logic for converting local coordinates to global coordinates can be found in the `transform_to_global(self, local_coords)` method.
+- **Robot Orientation Handling**: The robot's orientation is retrieved and used within the `robot_position_callback(self, data)` method.
+- **Motor Position Handling**: The motor's absolute position is captured and applied in the `state_callback(self, data)` and `get_motor_position(self)` methods.
+
+### Usage Instructions
+
+The enhanced global position conversion is integrated directly into the main workflow of the camera control system. When the system detects a human target, the updated coordinates are automatically calculated and published.
+
+- **Conversion Process**: The global position is calculated each time a human target is detected and updated in the `transform_to_global(self, local_coords)` method.
+- **Ensure Accuracy**: To maintain accurate positioning, ensure that the robot's orientation and motor position are correctly updated by regularly calling `robot_position_callback(self, data)` and `state_callback(self, data)`.
+
