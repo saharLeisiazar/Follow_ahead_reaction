@@ -13,7 +13,7 @@ alpha = np.array([])
 
 traj_length = 15
 
-with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/4.txt', 'r') as file:
+with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/curr_4.txt', 'r') as file:
     lines = file.readlines()
     for line in lines:
         if line == '\n':
