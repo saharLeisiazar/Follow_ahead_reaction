@@ -23,10 +23,10 @@ class node():
         m.header.stamp = rospy.Time.now()
 
 
-        x_min = -4.
-        x_max = 0.
-        y_min = -1
-        y_max = 1.
+        x_min = 3.45
+        x_max = 3.6
+        y_min = -3.
+        y_max = -1.6
         idx_list = []
         for new_y in np.arange(y_min, y_max, res):
             for new_x in np.arange(x_min, x_max, res):
@@ -34,14 +34,17 @@ class node():
                 x_idx = int(np.rint((new_x - origin_x) / res))
                 y_idx = int(np.rint((new_y - origin_y) / res))
                 idx = int(x_idx + width * y_idx)
-                idx_list.append(idx)
+
+                p=0.9
+                if np.random.choice(2, p=[1-p, p]):
+                    idx_list.append(idx)
 
 
 
         new_data =[]
         for i in range(len(data.data)):
             if i in idx_list :  #and original_data[i]
-                new_data.append(0)
+                new_data.append(100)
             else:
                 new_data.append(original_data[i])
                 # new_data.append(0)

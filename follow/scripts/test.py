@@ -8,9 +8,12 @@ std_angle = np.array([])
 
 sum_reward = np.array([])
 
+d = np.array([])
+alpha = np.array([])
+
 traj_length = 15
 
-with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/12_3.txt', 'r') as file:
+with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/4.txt', 'r') as file:
     lines = file.readlines()
     for line in lines:
         if line == '\n':
@@ -25,6 +28,10 @@ with open('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/12_3.txt', 'r'
             std_angle = np.append(std_angle, float(line.split()[1]))
         elif line.split()[0] == "sum_reward:":
             sum_reward = np.append(sum_reward, float(line.split()[1]))
+        elif line.split()[0] == "d:":
+            d = np.append(d, float(line.split()[1]))
+        elif line.split()[0] == "alpha:":
+            alpha = np.append(alpha, (float(line.split()[1])))
 
 
 sum_reward /= traj_length
@@ -34,3 +41,5 @@ print("mean_dist", np.mean(mean_dist))
 print("std_dist", np.mean(std_dist))
 print("mean_angle", np.mean(mean_angle))
 print("std_angle", np.mean(std_angle))
+print("d", np.mean(d), np.std(d))
+print("alpha", np.mean(alpha), np.std(alpha))

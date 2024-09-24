@@ -82,7 +82,7 @@ class MCTSNode(object):
 
         cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
 
-        if cost > 90:
+        if cost > 30:
             return True
 
 
