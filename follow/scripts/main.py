@@ -29,9 +29,9 @@ class node():
         rospy.init_node('main', anonymous=True)
 
         self.params= {}
-        self.params['robot_vel'] = 0.5
+        self.params['robot_vel'] = 0.6
         self.params['robot_vel_fast_lamda'] = 1.5
-        self.params['human_vel'] = 0.5
+        self.params['human_vel'] = 0.6
         self.params['dt'] = 0.2
         self.params['gamma'] = 0.9
         self.params['robot_angle'] = 45.
@@ -57,17 +57,9 @@ class node():
         rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
         # rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
 
-        # helmet_sub = message_filters.Subscriber("vicon/helmet_sahar/root", TransformStamped)
-        # robot_sub = message_filters.Subscriber("vicon/robot_sahar/root", TransformStamped)
-
-        # # ts = message_filters.TimeSynchronizer([helmet_sub], 10)
-        # ts = message_filters.TimeSynchronizer([helmet_sub, robot_sub], 10)
-        # ts.registerCallback(self.vicon_callback)
         rospy.Subscriber("vicon/helmet_sahar/root", TransformStamped, self.helmet_callback, buff_size=1)
         rospy.Subscriber("vicon/robot_sahar/root", TransformStamped, self.robot_callback, buff_size=1)
 
-        # self.pub_goal = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size =1)
-        # self.pub_goal_vis = rospy.Publisher('/goal_vis', Marker, queue_size =1)
         self.move_robot = rospy.Publisher('/robot/robotnik_base_control/cmd_vel', Twist, queue_size = 1)
         self.pub_robot_traj = rospy.Publisher('/robot_traj', Marker, queue_size = 1)
         self.pub_human_traj = rospy.Publisher('/human_traj', Marker, queue_size = 1)
@@ -79,6 +71,8 @@ class node():
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
                
+        self.theta_thr = 20 * np.pi / 180
+
 
     def helmet_callback(self, helmet):
         ######## robots pose
@@ -91,7 +85,7 @@ class node():
         
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         human_z = r.as_euler('zyx', degrees=False)[2]
-        human_z *= -1
+        # human_z *= -1
         human_z -= np.pi/2
         
         if human_z < -np.pi:
@@ -99,6 +93,9 @@ class node():
         if human_z > np.pi:
             human_z -= 2*np.pi
  
+
+        human_z = (np.abs(human_z)//self.theta_thr) *self.theta_thr * np.sign(human_z)
+
 
         human_p = helmet.transform.translation
         theta = 90 * np.pi / 180
@@ -118,7 +115,7 @@ class node():
                 self.human_history.pop(0)
                 # human_prob = self.human_prob.forward(self.human_history)
                 # print("human_prob: ", human_prob)
-                human_prob = {'left': 1., 'straight': 1., 'right': 1.}
+                human_prob = {'left': 0.3, 'straight': 1., 'right': 0.3}
 
                 self.best_action = self.expand_tree(state, human_prob) 
                 print()
@@ -136,13 +133,15 @@ class node():
         orien = robot.transform.rotation
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         robot_z = r.as_euler('zyx', degrees=False)[2]
-        robot_z *= -1
+        # robot_z *= -1
         robot_z -= np.pi/2
         
         if robot_z < -np.pi:
             robot_z +=2*np.pi
         if robot_z > np.pi:
             robot_z -= 2*np.pi
+
+        # robot_z = (np.abs(robot_z)//self.theta_thr) *self.theta_thr * np.sign(robot_z)
 
         robot_p = robot.transform.translation
         theta = 90 * np.pi / 180
@@ -170,7 +169,7 @@ class node():
             beta = np.arctan2(s[0,1] - s[1,1] , s[0,0] - s[1,0])   # atan2 (yr - yh  , xr - xh)           
             alpha = np.absolute(s[1,2] - beta) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
     
-            if D > 1.5:
+            if D > 1.8:
                 return True
 
             self.stay_bool = False
@@ -218,7 +217,6 @@ class node():
         else:
             euler = [0, 0, pose[2]]
             quat = R.from_euler('xyz', euler, degrees=False).as_quat()
-            # print(quat)
             m.pose.orientation.z = quat[2]
             m.pose.orientation.w = quat[3]
 
@@ -259,147 +257,13 @@ class node():
         return actions
 
     def costmap_callback(self, data):
-        print(1)
+        print("costmap received")
 
         self.params['map_origin_x'] = data.info.origin.position.x
         self.params['map_origin_y'] = data.info.origin.position.y
         self.params['map_res'] = data.info.resolution
         self.params['map_data'] = data.data
         self.params['map_width'] = data.info.width
-
-        # x = int(np.rint((0. - self.params['map_origin_x']) / self.params['map_res']))
-        # y = int(np.rint((-2. - self.params['map_origin_y']) / self.params['map_res']))
-        # cost = self.params['map_data'][int(x + self.params['map_width'] * y)]
-        # print(cost)
-
-
-
-
-    def vicon_callback(self, helmet, robot): 
-        
-        ######## robots pose
-        orien = robot.transform.rotation
-        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
-        robot_z = r.as_euler('zyx', degrees=False)[2]
-        if robot_z > 0:
-            robot_z -=np.pi
-        else:
-            robot_z += np.pi
-
-        robot_p = robot.transform.translation
-
-        ######### human pose
-        orien = helmet.transform.rotation
-        r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
-        human_z = r.as_euler('zyx', degrees=False)[2]
-        
-        if human_z > 0:
-            human_z -=np.pi
-        else:
-            human_z += np.pi
-
-        human_p = helmet.transform.translation
-
-        ######## Expanding the tree search
-        # state = np.array([[0.,0.,0.],[human_p.x, human_p.y, human_z]])
-        state = np.array([[robot_p.x, robot_p.y, robot_z],[human_p.x, human_p.y, human_z]])
-        self.move()
-        
-        if time.time() - self.time > (1./self.freq):
-            print()
-            print("new data")
-            print("state: ", state)
-            self.time = time.time()
-            self.human_history.append([human_p.x, human_p.y])
-            if len(self.human_history) > self.human_history_length:
-                self.human_history.pop(0)
-                # human_prob = self.human_prob.forward(self.human_history)
-                human_prob = {'left': 0.1, 'straight': 0.9, 'right': 0.1}
-
-                temp = time.time()
-                self.best_action = self.expand_tree(state, human_prob) 
-                print("expansion time", time.time()-temp)
-                print("action", self.best_action)
-
-    # def odom_callback(self,data):
-    #     robot_p = data.pose.pose.position
-    #     robot_o = data.pose.pose.orientation
-    #     yaw = R.from_quat([0, 0, robot_o.z, robot_o.w]).as_euler('xyz', degrees=False)[2]
-    #     self.state[0,:] = [robot_p.x , robot_p.y, yaw]
-
-
-    # def human_pose_callback(self, data):
-    #     human_traj = np.zeros((7,3))
-
-    #     for i in range(len(data.poses)):
-    #         human_traj[i,:] = [data.poses[i].position.x,
-    #                             data.poses[i].position.y,
-    #                             data.poses[i].orientation.z]
-
-    #     rot_yaw = camera2map_rot[2]
-    #     R_tran = [[np.cos(rot_yaw), -1*np.sin(rot_yaw), 0], [np.sin(rot_yaw), np.cos(rot_yaw), 0], [0, 0, 1]]
-
-    #     Traj_list = np.zeros((7,3))
-    #     for i in range(human_traj.shape[0]):
-    #         new_elem= list(np.add(np.dot(R_tran , human_traj[i, :]), camera2map_trans[:2]+[rot_yaw]))
-    #         if new_elem[2] > np.pi:  new_elem[2] -= 2*np.pi
-    #         if new_elem[2] < -np.pi:  new_elem[2] += 2*np.pi
-
-    #         Traj_list[i] = new_elem
-    #     self.state[1,:] = Traj_list[0,:]
-
-    #     m = Marker()
-    #     m.header.frame_id = 'map'
-    #     m.header.stamp = rospy.Time.now()
-    #     m.pose.position.x = Traj_list[0,0]
-    #     m.pose.position.y = Traj_list[0,1]
-    #     m.pose.orientation.z = R.from_euler('z', Traj_list[0,2], degrees=False).as_quat()[2]
-    #     m.pose.orientation.w = R.from_euler('z', Traj_list[0,2], degrees=False).as_quat()[3]
-    #     m.scale.x = 0.7
-    #     m.scale.y = 0.1
-    #     m.color.a = 1
-    #     m.color.g = 255
-
-    #     self.pub_human_pose.publish(m)
-
-    #     Traj_dic={}
-    #     Traj_dic['traj'] = Traj_list
-        
-    #     if time.time() > self.time: 
-    #         self.expand_tree([Traj_dic])
-
-    # def generate_goal(self, goal_state):
-    #     goal_map_frame = [goal_state[0,0], goal_state[0,1]]
-        
-    #     print('goal_map_frame', goal_map_frame)
-
-    #     goal = PoseStamped()
-    #     goal.header.frame_id = 'map'
-    #     goal.header.stamp = rospy.Time.now()
-    #     goal.pose.position.x = goal_map_frame[0]
-    #     goal.pose.position.y = goal_map_frame[1]
-
-    #     theta = np.arctan2( goal_map_frame[1] - self.state[0,1]  , goal_map_frame[0] - self.state[0,0]  )
-    #     theta_quat = R.from_euler('z', theta, degrees=False).as_quat()
-
-    #     goal.pose.orientation.z = theta_quat[2]
-    #     goal.pose.orientation.w = theta_quat[3]
-
-    #     self.pub_goal.publish(goal)
-  
-    #     g = Marker()
-    #     g.header.frame_id = 'map'
-    #     g.header.stamp = rospy.Time.now()
-    #     g.type = 2
-    #     g.pose.position.x = goal_map_frame[0]
-    #     g.pose.position.y = goal_map_frame[1]
-    #     g.scale.x = 0.3
-    #     g.scale.y = 0.3
-    #     g.color.a = 1
-    #     g.color.g = 0
-    #     g.color.b = 0.5
-    #     g.color.r = 1
-    #     self.pub_goal_vis.publish(g)
 
 
 if __name__ == '__main__':

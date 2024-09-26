@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
+    <!-- <node pkg="rviz" type="rviz" name="rviz" args"-d "/> -->
 
     <include file="$(find vicon_bridge)/launch/vicon.launch"/>
     <node pkg="map_server" type="map_server" name="map_server" args="/home/sahar/catkin_ws/src/navigation/include/cropped.yaml"/>
