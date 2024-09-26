@@ -1,26 +1,15 @@
-#!/usr/bin/env python3
-import sys
-sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/scripts')
-
-# from human_prob_dist import prob_dist, LSTMModel2D
+from human_prob_dist import prob_dist, LSTMModel2D
 from RL_interface import RL_model
-
 import numpy as np
-import torch
 import time
-
 from nodes import MCTSNode
 from search import MCTS
 from navi_state import navState
-
-import message_filters
 import rospy
 from geometry_msgs.msg import TransformStamped
 from scipy.spatial.transform import Rotation as R
-
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import OccupancyGrid
-# import time
 from visualization_msgs.msg import Marker
 
 
@@ -37,23 +26,21 @@ class node():
         self.params['robot_angle'] = 45.
         self.params['human_angle'] = 10.
         self.params['safety_params'] = {"r":0.5, "a":0.25}
-        self.params['reaction_zone_params'] = {"r":0.7, "a":0.3}
+        self.params['reaction_zone_params'] = {"r":0.8, "a":0.3}
         self.params['human_acts'] = self.define_human_actions()
         self.params['robot_acts'] = self.define_robot_actions()
         self.params['expansion_time'] = 0.15
         self.params['sim'] = False
-        # self.params['num_expansion'] = 60
         self.stay_bool = True
         self.time = time.time()
         self.freq = 5 #(Hz)
         self.best_action = None
 
         human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
-        # self.human_prob = prob_dist(human_prob_model_dir)
+        self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
         self.human_history_length = 15
         self.marker_id = 0
-        # rospy.Subscriber("/test", String, self.move_robot, buff_size=1)
         rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
         # rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
 
@@ -70,6 +57,11 @@ class node():
         model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
+
+        self.robot_x = 0.
+        self.robot_y = 0.
+        self.robot_z = 0.0
+        print("Initiated")
                
         self.theta_thr = 20 * np.pi / 180
 
@@ -92,19 +84,15 @@ class node():
             human_z +=2*np.pi
         if human_z > np.pi:
             human_z -= 2*np.pi
- 
 
         human_z = (np.abs(human_z)//self.theta_thr) *self.theta_thr * np.sign(human_z)
-
 
         human_p = helmet.transform.translation
         theta = 90 * np.pi / 180
         rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         [human_x, human_y] = np.dot(rot, [human_p.x, human_p.y])
-        
 
         ######## Expanding the tree search
-        # state = np.array([[0.,0.,0.],[human_x, human_y, human_z]])
         state = np.array([[robot_x, robot_y, robot_z],[human_x, human_y, human_z]])
         self.move()
         
@@ -113,7 +101,7 @@ class node():
             self.human_history.append([human_p.x, human_p.y])
             if len(self.human_history) > self.human_history_length:
                 self.human_history.pop(0)
-                # human_prob = self.human_prob.forward(self.human_history)
+                human_prob = self.human_prob.forward(self.human_history)
                 # print("human_prob: ", human_prob)
                 human_prob = {'left': 0.3, 'straight': 1., 'right': 0.3}
 
@@ -133,7 +121,6 @@ class node():
         orien = robot.transform.rotation
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         robot_z = r.as_euler('zyx', degrees=False)[2]
-        # robot_z *= -1
         robot_z -= np.pi/2
         
         if robot_z < -np.pi:
@@ -157,7 +144,11 @@ class node():
             nav_state = navState(params = self.params, state=state, next_to_move= 0)
             node_human = MCTSNode(state=nav_state, params = self.params, parent= None)  
             mcts = MCTS(node_human, human_prob)
-            return  mcts.tree_expantion(time.time()+ self.params['expansion_time']).action
+            best_node = mcts.tree_expantion(time.time()+ self.params['expansion_time'])
+            if best_node:
+                return  best_node.action
+            else:
+                return "stop"
 
         else:
             print("Waiting ...")
@@ -188,7 +179,7 @@ class node():
         elif action == "right" or action == "fast_right":
             W *= -1
 
-        elif action == None:
+        elif action == 'stop' or action == None:
             V = 0
             W = 0
 

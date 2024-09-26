@@ -3,8 +3,10 @@
 <launch>
     <!-- <node pkg="rviz" type="rviz" name="rviz" args"-d "/> -->
 
-    <include file="$(find vicon_bridge)/launch/vicon.launch"/>
-    <node pkg="map_server" type="map_server" name="map_server" args="/home/sahar/catkin_ws/src/navigation/include/cropped.yaml"/>
+    <!-- <include file="$(find vicon_bridge)/launch/vicon.launch"/> -->
+    <!-- <node pkg="map_server" type="map_server" name="map_server" args="$(find follow)/include/box_map.yaml"/> -->
+    <node pkg="map_server" type="map_server" name="map_server" args="$(find follow)/include/obstacle.yaml"/>
+
     <include file="$(find navigation)/launch/main.launch"/>
     <!-- <node pkg="follow" type="main.py" name="main" output="screen"/> -->
 

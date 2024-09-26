@@ -20,8 +20,8 @@ class MCTS:
         # self.leaf_nodes.append(self.root)
         self.leaf_nodes = np.append(self.leaf_nodes, self.root)
 
-        # while time.time() < T:
-        for _ in range(50):
+        while time.time() < T:
+        # for _ in range(100):
             ### Node selection 
             curr_node = self.root
             
@@ -35,7 +35,7 @@ class MCTS:
             ### at this point current node is a leaf node
             ### Node expantion
             self.leaf_nodes = np.delete(self.leaf_nodes, np.where(self.leaf_nodes == curr_node))
-            # self.leaf_nodes.remove(curr_node)
+
             while not curr_node.is_fully_expanded():
                 child_node = curr_node.expand(self.human_future[depth//2])
                 if child_node == None:
@@ -45,7 +45,7 @@ class MCTS:
                 child_node.tree_id = tree_id+1
                 tree_id +=1
                 self.leaf_nodes = np.append(self.leaf_nodes, child_node)
-                # self.leaf_nodes.append(child_node)
+
             
             # self.draw_tree()
         return self.best_child_node()
@@ -55,18 +55,18 @@ class MCTS:
         if not c:
             return -np.inf
         
-        c_param= 5.
+        c_param= 2.
         prob = 1.
-        if c.state.next_to_move == 0: 
-            if c.action == 'left':
-                prob = self.human_prob['left']
-            elif c.action == 'straight':
-                prob = self.human_prob['straight']
-            elif c.action == 'right':
-                prob = self.human_prob['right']
+        # if c.state.next_to_move == 0: 
+        #     if c.action == 'left':
+        #         prob = self.human_prob['left']
+        #     elif c.action == 'straight':
+        #         prob = self.human_prob['straight']
+        #     elif c.action == 'right':
+        #         prob = self.human_prob['right']
 
-        else:
-            prob = 1.      
+        # else:
+        #     prob = 1.      
 
         UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))  * prob
         return UCB
@@ -109,40 +109,40 @@ class MCTS:
         return  r #+ value.item() /10 * self.params['gamma']
     
     def best_child_node(self):
-        if len(self.leaf_nodes) == 0:
-            return None
-        leaf_values = []
-        for c in self.leaf_nodes:
-            if c.state.next_to_move == 0:
-                c = c.parent
+        # if len(self.leaf_nodes) == 0:
+        #     return None
+        # leaf_values = []
+        # for c in self.leaf_nodes:
+        #     if c.state.next_to_move == 0:
+        #         c = c.parent
 
-            leaf_values.append(c.value/c.number_of_visits)
+        #     leaf_values.append(c.value/c.number_of_visits)
 
-        node = self.leaf_nodes[np.argmax(leaf_values)]
-        action = 'straight'
-        while node.parent:
-            action = node.action
-            node = node.parent
+        # node = self.leaf_nodes[np.argmax(leaf_values)]
+        # action = 'straight'
+        # while node.parent:
+        #     action = node.action
+        #     node = node.parent
             
-        return action
+        # return action
     
     
-        # visit = []
-        # for node in self.root.children:
-        #     if node:
-        #         visit.append(node.n)
-        #     else:
-        #         visit.append(0)
+        visit = []
+        for node in self.root.children:
+            if node:
+                visit.append(node.n)
+            else:
+                visit.append(0)
       
-        # # print(visit)
-        # idx = np.argmax(visit)
+        # print(visit)
+        idx = np.argmax(visit)
 
-        # if visit[-1] == visit[idx]:
-        #     return self.root.children[-1]
-        # elif visit[2] == visit[idx]:
-        #     return self.root.children[2]
-        # elif visit[0] == visit[1] == visit[idx]:
-        #     return self.root.children[2] ## if fast left == fast right then take fast straight
-        # elif visit[3] == visit[4] == visit[idx]:
-        #     return self.root.children[5]  ## if left == right then take straight
-        # return self.root.children[np.argmax(visit)]        
+        if visit[-1] == visit[idx]:
+            return self.root.children[-1]
+        elif visit[2] == visit[idx]:
+            return self.root.children[2]
+        elif visit[0] == visit[1] == visit[idx]:
+            return self.root.children[2] ## if fast left == fast right then take fast straight
+        elif visit[3] == visit[4] == visit[idx]:
+            return self.root.children[5]  ## if left == right then take straight
+        return self.root.children[np.argmax(visit)]        

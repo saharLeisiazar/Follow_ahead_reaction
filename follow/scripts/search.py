@@ -20,7 +20,7 @@ class MCTS:
 
         while time.time() < T:
             expansion_count += 1
-        # for _ in range(50):
+        # for _ in range(100):
             ### Node selection 
             curr_node = self.root
             while(curr_node.number_of_visits > 1):
@@ -64,7 +64,8 @@ class MCTS:
         else:
             prob = 1.      
 
-        UCB = (c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n))  * prob
+        UCB = ((c.value/c.n) + c_param * np.sqrt((np.log(c.parent.n) / c.n)) ) * prob
+
         return UCB
 
 
