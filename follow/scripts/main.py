@@ -36,6 +36,8 @@ class node():
         self.freq = 5 #(Hz)
         self.best_action = None
 
+        self.theta_thr = 20 * np.pi / 180
+
         human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
         self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
@@ -63,7 +65,7 @@ class node():
         self.robot_z = 0.0
         print("Initiated")
                
-        self.theta_thr = 20 * np.pi / 180
+        
 
 
     def helmet_callback(self, helmet):
@@ -160,7 +162,7 @@ class node():
             beta = np.arctan2(s[0,1] - s[1,1] , s[0,0] - s[1,0])   # atan2 (yr - yh  , xr - xh)           
             alpha = np.absolute(s[1,2] - beta) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
     
-            if D > 1.8:
+            if D > 1.5:
                 return True
 
             self.stay_bool = False
