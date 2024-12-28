@@ -21,7 +21,7 @@ scheduler_step = 100000
 
 current_freq = 50
 desired_freq = 5
-freq_ratio = current_freq // desired_freq
+freq_ratio = current_freq // desired_freq  #downsampling to a lower frequency
 
 tanh_power_value = 0.2
 
@@ -48,7 +48,7 @@ def generate_target(seq, input_length):
 
 def generate_2d_data(seq_length, input_length):
     # data loaidng and preperation
-    raw_data = np.load('/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/data_3d_h36m.npz', allow_pickle=True)['positions_3d'].item()
+    raw_data = np.load('data_3d_h36m.npz', allow_pickle=True)['positions_3d'].item()
     samples = []
     target = []
 
@@ -56,9 +56,10 @@ def generate_2d_data(seq_length, input_length):
         data = raw_data[dataset]['Walking'] #S 1/5/6/8/9/11
         data = data[:,0,:2]  #hip pose
         for j in range(freq_ratio):
-            ind = np.arange(j, data.shape[0], freq_ratio)  # reducing the sampling rate from 50 hz to 2 hz
+            ind = np.arange(j, data.shape[0], freq_ratio)  # reducing the sampling rate from 50 hz to desired_freq hz
             d = data[ind]
 
+            # Augment data by flipping and rotating
             for i in range(d.shape[0] - seq_length):
                 new_seq = d[i:i+seq_length]
                 new_sample = new_seq
@@ -174,7 +175,7 @@ for epoch in range(num_epochs):
 
 
 
-dir_name = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/hmn_traj_prob_dest/' + exp_name
+dir_name = '../' + exp_name
 if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 
