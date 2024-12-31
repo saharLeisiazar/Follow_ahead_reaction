@@ -6,6 +6,7 @@ This repository contains the file to train the LSTM-fc model to predict the prob
 Incorporating the probability of a human's next possible action enhances the performance of the robot's decision-making process. This model predicts an individual human actions by training a Long Short-Term Memory (LSTM) model with a fully connected (fc) layer to generate accurate probabilities for a human's next directional move: walking straight, turning right, or turning left.
 
 I trained the LSTM-fc model to first, sample a human's position over a three-second interval and then, generate probabilities for the next possible actions: walking straight, turning right, or turning left. The fully connected layer enables the model to output the likelihood of each action.
+
 ![alt text](images/general-pic.png)
 
 ## Methodology
