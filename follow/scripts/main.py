@@ -38,16 +38,14 @@ class node():
 
         self.theta_thr = 20 * np.pi / 180
 
-        human_prob_model_dir = "/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/human_prob.pth"
+        human_prob_model_dir = "/include/human_prob.pth"
         self.human_prob = prob_dist(human_prob_model_dir)
         self.human_history = []
         self.human_history_length = 15
         self.marker_id = 0
         rospy.Subscriber("/move_base/global_costmap/costmap", OccupancyGrid, self.costmap_callback, buff_size=1)
-        # rospy.Subscriber("/map", OccupancyGrid, self.costmap_callback, buff_size=1)
-
-        rospy.Subscriber("vicon/helmet_sahar/root", TransformStamped, self.helmet_callback, buff_size=1)
-        rospy.Subscriber("vicon/robot_sahar/root", TransformStamped, self.robot_callback, buff_size=1)
+        rospy.Subscriber("vicon/helmet/root", TransformStamped, self.helmet_callback, buff_size=1)
+        rospy.Subscriber("vicon/robot/root", TransformStamped, self.robot_callback, buff_size=1)
 
         self.move_robot = rospy.Publisher('/robot/robotnik_base_control/cmd_vel', Twist, queue_size = 1)
         self.pub_robot_traj = rospy.Publisher('/robot_traj', Marker, queue_size = 1)
@@ -56,7 +54,7 @@ class node():
         self.pub_human_arrow = rospy.Publisher('/human_traj_arrow', Marker, queue_size = 1)
 
         file_name = 'multiply_rewards_1.zip'
-        model_directory = '/home/sahar/catkin_ws/src/Follow_ahead_reaction/follow/include/' + file_name 
+        model_directory = '/include/' + file_name 
         self.params['RL_model'] = RL_model()
         self.params['RL_model'].load_model(model_directory, policy='a2c')
 
@@ -66,7 +64,6 @@ class node():
         print("Initiated")
                
         
-
 
     def helmet_callback(self, helmet):
         ######## robots pose
@@ -79,7 +76,6 @@ class node():
         
         r = R.from_quat([orien.w, orien.x, orien.y, orien.z])
         human_z = r.as_euler('zyx', degrees=False)[2]
-        # human_z *= -1
         human_z -= np.pi/2
         
         if human_z < -np.pi:
@@ -104,13 +100,8 @@ class node():
             if len(self.human_history) > self.human_history_length:
                 self.human_history.pop(0)
                 human_prob = self.human_prob.forward(self.human_history)
-                # print("human_prob: ", human_prob)
-                human_prob = {'left': 0.3, 'straight': 1., 'right': 0.3}
 
                 self.best_action = self.expand_tree(state, human_prob) 
-                print()
-                print("state: ", state)
-                print("action", self.best_action)
 
                 self.pub_marker("robot", self.marker_id, state)
                 self.pub_marker("human", self.marker_id, state)
@@ -129,8 +120,6 @@ class node():
             robot_z +=2*np.pi
         if robot_z > np.pi:
             robot_z -= 2*np.pi
-
-        # robot_z = (np.abs(robot_z)//self.theta_thr) *self.theta_thr * np.sign(robot_z)
 
         robot_p = robot.transform.translation
         theta = 90 * np.pi / 180
@@ -156,11 +145,8 @@ class node():
             print("Waiting ...")
 
     def stay(self, s):
-        # return False
         if self.stay_bool:
             D = np.linalg.norm(s[0,:2]- s[1, :2]) #distance_to_human
-            beta = np.arctan2(s[0,1] - s[1,1] , s[0,0] - s[1,0])   # atan2 (yr - yh  , xr - xh)           
-            alpha = np.absolute(s[1,2] - beta) *180 /np.pi  #angle between the person-robot vector and the person-heading vector         
     
             if D > 1.5:
                 return True

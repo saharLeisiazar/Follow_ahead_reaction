@@ -1,7 +1,5 @@
 import numpy as np
-from collections import defaultdict
-import util as ptu
-from replayBuffer import state_to_obs , normalize
+# from replayBuffer import state_to_obs , normalize
 
 
 class MCTSNode(object):
@@ -65,7 +63,6 @@ class MCTSNode(object):
             return True
 
     def any_obs(self, s, sp):
-        # return False
         if self.params['sim']:
             return False
         

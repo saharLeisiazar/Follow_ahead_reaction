@@ -3,52 +3,6 @@ import torch
 from torch import nn
 import numpy as np
 
-# from replayBuffer import replay_buffer
-
-from nav_msgs.msg import OccupancyGrid
-
-# rospy.init_node('util', anonymous=False)
-# data = rospy.wait_for_message('/move_base/global_costmap/costmap', OccupancyGrid, timeout=None)
-# map_info= {}
-# map_info['height'] = data.info.height
-# map_info['width'] =  data.info.width
-# map_info['origin_x'] = data.info.origin.position.x
-# map_info['origin_y'] = data.info.origin.position.y
-# map_info['res'] = data.info.resolution
-
-# map_data = data.data
-
-# print(map_info)
-
-
-def is_occluded(s1, s2):
-    x1_ind = int(np.rint((s1[0] - map_info['origin_x']) / map_info['res']))
-    y1_ind = int(np.rint((s1[1] - map_info['origin_y']) / map_info['res']))
-    x2_ind = int(np.rint((s2[0] - map_info['origin_x']) / map_info['res']))
-    y2_ind = int(np.rint((s2[1] - map_info['origin_y']) / map_info['res']))
-
-    if x2_ind == x1_ind and y2_ind == y1_ind: return False
-
-    slope = (y2_ind-y1_ind)/(x2_ind-x1_ind  + 1e-8) 
-    obstacle_count =0
-
-    range_step = np.sign((x2_ind-x1_ind))
-    if range_step == 0: range_step = 1 
-
-    x_list = range(x1_ind, x2_ind+1, range_step)
-    for x in x_list:
-        y0 = int(slope*(x-x1_ind) + y1_ind)
-        for y in range(y0 -2, y0 +3):   
-            if map_data[int(x + map_info['width'] * y)] > 0: 
-                obstacle_count += 1
-
-    return True if obstacle_count > 2 else False
-
-
-
-
-
-# BF = replay_buffer()
 Activation = Union[str, nn.Module]
 
 
