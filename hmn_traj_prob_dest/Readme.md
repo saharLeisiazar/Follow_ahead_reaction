@@ -1,6 +1,6 @@
 # Human Action Prediction with LSTM-fc
 
-This repository contains the file to train the LSTM-fc model to predict the probabilities of a human's next possible action. A pretrained model is located in the model folder.
+This repository contains the file to train the LSTM-fc model to predict the probabilities of a human's next possible action. 
 
 ## Overview
 Incorporating the probability of a human's next possible action enhances the performance of the robot's decision-making process. This model predicts an individual human actions by training a Long Short-Term Memory (LSTM) model with a fully connected (fc) layer to generate accurate probabilities for a human's next directional move: walking straight, turning right, or turning left.
