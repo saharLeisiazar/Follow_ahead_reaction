@@ -5,6 +5,6 @@ This repository contains code to control the ZED2 camera's rotation using a Dyna
 
 # Requirements
 
-1. Human Detection: The code subscribes to a topic to receive the detected human's location in the image.
+- Human Detection: The code subscribes to a topic to receive the detected human's location in the image.
 
-2. Robot Odometry: If needed, the code subscribes to the robot's odometry to calculate and publish the human's pose in the global frame.
+- Robot Odometry: If needed, the code subscribes to the robot's odometry to calculate and publish the human's pose in the global frame.
