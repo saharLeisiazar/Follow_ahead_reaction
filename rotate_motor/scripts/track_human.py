@@ -2,7 +2,6 @@
 import math
 import matplotlib.pyplot as plt
 import os
-import statistics
 import rospy
 import numpy as np
 from zed_interfaces.msg import ObjectsStamped
@@ -10,10 +9,7 @@ from geometry_msgs.msg import PoseStamped , PoseArray, PointStamped
 from nav_msgs.msg import Odometry
 from dynamixel_workbench_msgs.srv import *
 from rospy_tutorials.srv import *
-import sys
 from scipy.spatial.transform import Rotation
-# sys.path.append('/home/sahar/catkin_ws/src/Follow_ahead_reaction/rotate_motor/scripts/')
-# from camera_dimensions import get_camera_dimensions
 
 # Get camera dimensions
 width, height = (1280,1080)
@@ -25,21 +21,12 @@ class human_traj_prediction():
         print('initializing node')
         rospy.init_node('prediction', anonymous=True)
         
-        print('setting up subscriber and publisher')
         rospy.Subscriber('/zed2/zed_node/obj_det/objects', ObjectsStamped, self.predictions_callback)
-        print('Subscriber setup for /zed2/zed_node/obj_det/objects')
-
         rospy.Subscriber('odom', Odometry, self.robot_position_callback)
 
         self.pub_cur_pose = rospy.Publisher('/person_pose', PoseStamped, queue_size = 1)
-        print('Publisher setup for /person_pose')
-
         self.pub_pred_pose_all = rospy.Publisher('/person_pose_pred_all', PoseArray, queue_size = 1)
-        print('Publisher setup for /person_pose_pred_all')
-
         self.pub_glob_coords = rospy.Publisher('/pub_glob_coords', PointStamped, queue_size=1)
-        print('Publisher setup for /pub_glob_coords')
-
 
         self.deg_to_res = 1024/90
         self.goal = 0
@@ -48,20 +35,15 @@ class human_traj_prediction():
         self.robot_position = [0,0,0]
         self.human_x = []
         self.human_y = []
-        # self.robot_orientation = np.eye(3)
-        # self.motor_rotation_angle = 0.0
-        
+
         #For testing
         self.human_global_pos = []
-
-        print('Initialization complete')
 
 
     def send_goal(self):
 
         self.goal = self.goal % 360 # ensures the goal stays in 0-359 range
 
-        print("Sending goal:" , self.goal)
         rospy.wait_for_service('/dynamixel_workbench/dynamixel_command')
         try:
             req = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
@@ -149,22 +131,17 @@ class human_traj_prediction():
             self.send_goal()
             # rospy.sleep(0.3)
 
-
         ###### person is detected
         if len(feat) and self.count % 3 == 0:
-                # print("Person detected at x: ", feat['x'])
             ###### To keep the human in the middle of the image
 
                 mean_bb = (feat['bb_x_min'] + feat['bb_x_max']) /2
-                # print("mean_bb: ", mean_bb)
-                # turn = 10
-                
+               
                 # Define center threshold based on a narrower range
                 center_range_percentage = 0.15  # % on either side of the center
                 image_center = 1280 / 2
                 center_threshold_min = image_center * (1 - center_range_percentage)  # 1280 * (1-0.15)/2 = 576 
                 center_threshold_max = image_center * (1 + center_range_percentage)  # 1280 * (1+0.15)/2 = 704
-
 
                 if mean_bb < center_threshold_min:
                     turn = min(10, center_threshold_min - mean_bb)
@@ -178,16 +155,9 @@ class human_traj_prediction():
                     print("rotating -", turn , " deg")
                     self.send_goal() 
 
-
                 # transform the human position to global coordinates
                 human_position_global = self.transform_to_global(feat['position'])
-                # print("Human position in global coordinates: ", human_position_global)
-
-                # for testing: store human pos for plotting and testing
-                # self.human_global_pos.append(human_position_global.tolist())
-                # # print("current global position shage: ", np.array(self.human_global_pos).shape)
-                # self.save_positions()
-
+ 
                 # Publish the current human position
                 point = PointStamped()
                 point.header.stamp = rospy.Time.now()
@@ -204,7 +174,6 @@ class human_traj_prediction():
 
     # For Testing: To plot the global position of human for testing
     def plot_human_positions(self):
-        # global_positions = np.array(self.human_global_pos)
         if os.path.exists(save_file):
             global_positions = np.load(save_file)
         print(f"Global position shape: {global_positions.shape}")
@@ -226,5 +195,3 @@ if __name__ == '__main__':
     print("Starting the human trejectory prediction node")
     human_traj_prediction()
     rospy.spin()   
-
-    # human_traj_prediction().plot_human_positions() 

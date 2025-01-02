@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
 <launch>
     <include file='$(find zed_wrapper)/launch/zed2.launch'/>
-    <!--node pkg="rotate_motor" type='track_human.py' name='track_human' output='screen'/-->
+    <node pkg="rotate_motor" type='track_human.py' name='track_human' output='screen'/>
 </launch> 
