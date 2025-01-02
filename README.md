@@ -40,7 +40,7 @@ the Human3.6M dataset is employed [3].
 
 [2] Leisiazar S, Park EJ, Lim A, Chen M. An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications. In2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 2023 Oct 1 (pp. 221-228). IEEE.
 
-[3] 
+[3] Catalin Ionescu, Dragos Papava, Vlad Olaru, and Cristian Sminchisescu. Human3.6m: Large scale datasets and predictive methods for 3d human sensing in natural environments. IEEE transactions on pattern analysis and machine intelligence,36(7):1325–1339, 2013.
 
 
 ## Data Transformation
