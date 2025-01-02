@@ -5,6 +5,7 @@ This repository implements the approach proposed in my paper [1] to address the 
 ## Overview
 A novel methodology is developed comprising three integrated modules: RL, LSTM, and MCTS. This approach introduces a unique consideration of distinct action spaces for humans and robots, enabling the system to dynamically capture and adapt to sudden changes in human trajectories with reasonable probability. This integration builds on prior work [2] by improving responsiveness and adaptability, addressing challenges in scenarios with frequent and unpredictable human direction changes. A detailed explanation of these modules is provided in the following sections.
 
+![alt text](images/cover.png)
 
 ## Citation
 [1] Leisiazar S, Razavi R, Park EJ, Lim A, Chen M. Adapting to frequent human direction changes in autonomous frontal following robots. 
