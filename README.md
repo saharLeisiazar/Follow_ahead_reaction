@@ -1,14 +1,18 @@
-# TUTR
+# Adapting to Frequent Human Direction Changes in Autonomous Frontal Following Robots
 
-# Data Preprocessing and TUTR Model Re-training (May 13-24, Week 1 & 2)
+This repository implements the approach proposed in my paper [1] to address the challenges of robot follow-ahead applications, where human behavior can be highly variable and unpredictable. Our method leverages a decision-making technique to improve the robot's ability to navigate effectively in front of a person.
 
-## Literature Review
-- Reviewed academic paper related to the TUTR model to understand the foundational concepts and methodologies.
-- Explored the GitHub repositories of TUTR project to understand the implementations.
+## Overview
+A novel methodology is developed comprising three integrated modules: RL, LSTM, and MCTS. This approach introduces a unique consideration of distinct action spaces for humans and robots, enabling the system to dynamically capture and adapt to sudden changes in human trajectories with reasonable probability. This integration builds on prior work [2] by improving responsiveness and adaptability, addressing challenges in scenarios with frequent and unpredictable human direction changes. A detailed explanation of these modules is provided in the following sections.
 
-## Dataset Preparation
-- Downloaded and analyzed the dataset used by the original TUTR model to familiarize with the data structure and requirements.
-- Obtained the SFU_nav_store dataset from a collaborator, Zhitian, which was used to re-train the TUTR model.
+
+## Citation
+[1] Leisiazar S, Razavi R, Park EJ, Lim A, Chen M. Adapting to frequent human direction changes in autonomous frontal following robots. 
+
+[2] Leisiazar S, Park EJ, Lim A, Chen M. An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications. In2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 2023 Oct 1 (pp. 221-228). IEEE.
+
+
+
 
 ## Data Transformation
 - Utilized `transform_csv.py` to convert the SFU_nav_store dataset into a format compatible with the TUTR model's input requirements.
