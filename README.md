@@ -7,7 +7,31 @@ A novel methodology is developed comprising three integrated modules: RL, LSTM, 
 ![alt text](images/cover.png)
 
 
+## Key Modules
 
+### Tree Expansion:
+Monte Carlo Tree Search (MCTS) is used to determine optimal actions for a robot following a person ahead. This approach enhances traditional MCTS by integrating a trained reinforcement learning (RL) model for node evaluation and an LSTM-based model to predict human action probabilities. By combining these elements, the method improves decision-making accuracy and robustness, enabling the robot to effectively balance exploration and exploitation in complex, dynamic scenarios.
+
+At each time step, the system expands a tree with two layers: robot nodes and human nodes. 
+Robot nodes represent possible actions or states of the robot.
+Human nodes represent potential states or movements of the person being followed.
+While expanding the tree and creating new leaf nodes, the safety of each node is evaluated. If a node directs the robot toward an unsafe region, it is removed from the tree.
+The RL model evaluates each node to estimate its value.
+The Human Trajcetory Prediction model assigns probabilitis to human nodes.
+
+The expansion process is done by MCTS at a frequency of 5 Hz.
+After expanding the tree, the child node with the highest visit count and expansion is chosen as the optimal action for the robot.
+A new tree is expanded based on the updated state and inputs.
+
+
+### Reinforcement Learning (RL) Model:
+
+Evaluates the quality of tree nodes during the tree expansion.
+
+### Human Trajcetory Prediction Model:
+An LSTM-fc model is trained specifically to sample a human’s position over a three-second interval and generate probabilities for their next possible actions.
+The fully connected layer attached to the LSTM enables the model to output the likelihood of the human walking straight, turning right, or turning left. For training, 
+the Human3.6M dataset is employed [3].
 
 
 
@@ -16,7 +40,7 @@ A novel methodology is developed comprising three integrated modules: RL, LSTM, 
 
 [2] Leisiazar S, Park EJ, Lim A, Chen M. An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications. In2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 2023 Oct 1 (pp. 221-228). IEEE.
 
-
+[3] 
 
 
 ## Data Transformation
