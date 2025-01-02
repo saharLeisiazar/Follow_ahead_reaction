@@ -56,6 +56,8 @@ robot is more confident in turning right to navigate in front
 of the human.
 
 
+![alt text](images/modules.png)
+
 ## Citation
 [1] Leisiazar S, Razavi R, Park EJ, Lim A, Chen M. Adapting to frequent human direction changes in autonomous frontal following robots. 
 
