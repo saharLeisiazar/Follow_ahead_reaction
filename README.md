@@ -58,6 +58,10 @@ of the human.
 
 ![alt text](images/modules.png)
 
+## License
+This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 International License]
+
+
 ## Citation
 [1] Leisiazar S, Razavi R, Park EJ, Lim A, Chen M. Adapting to frequent human direction changes in autonomous frontal following robots. 
 
