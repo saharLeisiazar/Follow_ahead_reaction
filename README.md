@@ -63,7 +63,7 @@ This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0 In
 
 
 ## Citation
-[1] Leisiazar S, Razavi R, Park EJ, Lim A, Chen M. Adapting to frequent human direction changes in autonomous frontal following robots. 
+[1] S. Leisiazar, S. R. R. Rohani, E. J. Park, A. Lim and M. Chen, "Adapting to Frequent Human Direction Changes in Autonomous Frontal Following Robots," in IEEE Robotics and Automation Letters, doi: 10.1109/LRA.2025.3537860.
 
 [2] Leisiazar S, Park EJ, Lim A, Chen M. An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications. In2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 2023 Oct 1 (pp. 221-228). IEEE.
 
